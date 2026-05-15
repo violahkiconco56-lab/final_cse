@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <!-- SIDEBAR CONTENT REMOVED (NOW HANDLED BY BASE NAVBAR) -->
+
+    <!-- MAIN CONTENT -->
+
+    <div class="main-content">
+
+        <!-- HEADER -->
+
+        <div class="header">
+
+            <h1>Sales Management Dashboard</h1>
+
+            <p>
+                Record sales, monitor customer purchases,
+                calculate transport charges and track revenue.
+            </p>
+
+        </div>
+
+        <!-- SALES CARDS -->
+
+        <div class="dashboard-cards">
+
+            <div class="card">
+                <h3>Total Sales</h3>
+                <p>{{ total_sales }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Total Revenue</h3>
+                <p>UGX {{ total_revenue }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Total Customers</h3>
+                <p>{{ total_customers }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Transport Charges</h3>
+                <p>UGX {{ transport_charges }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Pending Payments</h3>
+                <p>UGX {{ pending_payments }}</p>
+            </div>
+
+        </div>
+
+        <!-- RECENT SALES -->
+
+        <div class="section">
+
+            <div class="section-box">
+
+                <h2>Recent Sales</h2>
+
+                <table>
+
+                    <tr>
+                        <th>Customer</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Total Amount</th>
+                        <th>Date</th>
+                    </tr>
+
+                    {% for sale in recent_sales %}
+
+                    <tr>
+                        <td>{{ sale.customer_name }}</td>
+                        <td>{{ sale.product_name }}</td>
+                        <td>{{ sale.quantity }}</td>
+                        <td>UGX {{ sale.total_amount }}</td>
+                        <td>{{ sale.sale_date }}</td>
+                    </tr>
+
+                    {% endfor %}
+
+                </table>
+
+            </div>
+
+            <!-- TOP PRODUCTS -->
+
+            <div class="section-box">
+
+                <h2>Top Selling Products</h2>
+
+                <table>
+
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Units Sold</th>
+                    </tr>
+
+                    {% for product in top_products %}
+
+                    <tr>
+                        <td>{{ product.product_name }}</td>
+                        <td>{{ product.units_sold }}</td>
+                    </tr>
+
+                    {% endfor %}
+
+                </table>
+
+            </div>
+
+        </div>
+
+        <!-- BUSINESS RULE -->
+
+        <div class="warning">
+
+            <strong>Transport Policy:</strong>
+
+            Customers within 10KM who buy goods worth
+            UGX 500,000 and above qualify for free transport.
+            Otherwise, transport charges of UGX 30,000 apply.
+
+        </div>
+
+    </div>
+
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1 style="color:#0b1f3a;">Admin Control Panel</h1>
+
+<div style="display:flex; gap:15px; flex-wrap:wrap;">
+
+    <div style="background:white; padding:15px; width:200px; border-left:5px solid #ffd700;">
+        <h3>Total Revenue</h3>
+        <p>{{ total_revenue }}</p>
+    </div>
+
+    <div style="background:white; padding:15px; width:200px; border-left:5px solid #ffd700;">
+        <h3>Stock Value</h3>
+        <p>{{ stock_value }}</p>
+    </div>
+
+    <div style="background:white; padding:15px; width:200px; border-left:5px solid #ffd700;">
+        <h3>Total Credit</h3>
+        <p>{{ total_credit }}</p>
+    </div>
+
+    <div style="background:white; padding:15px; width:200px; border-left:5px solid #ffd700;">
+        <h3>Total Items</h3>
+        <p>{{ total_items }}</p>
+    </div>
+
+</div>
+
+{% endblock %}

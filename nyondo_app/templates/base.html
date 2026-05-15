@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nyondo Stock System</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: #0b1f3a; /* dark blue */
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffd700; /* yellow */
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin-left: 15px;
+            font-weight: bold;
+        }
+
+        .navbar a:hover {
+            color: #ffd700;
+        }
+
+        /* LAYOUT */
+        .container {
+            padding: 20px;
+        }
+        .header {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+}
+
+.dashboard-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.card {
+    background-color: white;
+    width: 230px;
+    padding: 20px;
+    border-radius: 10px; 
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+}   
+    </style>
+</head>
+
+<body>
+
+<!-- NAVBAR (ONE PLACE FOR ALL PAGES) -->
+<div class="navbar">
+    <div class="logo">NYONDO SYSTEM</div>
+
+    <div>
+        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+        <a href="{% url 'stock_dashboard' %}">Stock</a>
+        <a href="{% url 'sales_dashboard' %}">Sales</a>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
+
+<!-- PAGE CONTENT WILL GO HERE -->
+<div class="container">
+    {% block content %}
+    {% endblock %}
+</div>
+
+</body>
+</html>

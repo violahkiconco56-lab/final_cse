@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- MAIN CONTENT -->
+
+<div class="main-content">
+
+    <!-- HEADER -->
+    <div class="header">
+
+        <h1>Store Manager Dashboard</h1>
+
+        <p>
+            Manage stock registration, monitor inventory levels,
+            track low stock products and supervise stock movement.
+        </p>
+
+    </div>
+
+    <!-- DASHBOARD CARDS -->
+
+    <div class="dashboard-cards">
+
+        <div class="card">
+            <h3>Total Products</h3>
+            <p>{{ total_products }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Total Stock Items</h3>
+            <p>{{ total_stock_items }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Low Stock Alerts</h3>
+            <p>{{ low_stock }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Out Of Stock</h3>
+            <p>{{ out_of_stock }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Stock Value</h3>
+            <p>UGX {{ stock_value }}</p>
+        </div>
+
+    </div>
+
+    <!-- STOCK TABLE -->
+
+    <div class="section">
+
+        <div class="section-box">
+
+            <h2>Available Stock</h2>
+
+            <table>
+
+                <tr>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th>Buying Price</th>
+                    <th>Selling Price</th>
+                </tr>
+
+                {% for product in stock_products %}
+
+                <tr>
+                    <td>{{ product.product_name }}</td>
+                    <td>{{ product.category }}</td>
+                    <td>{{ product.quantity }}</td>
+                    <td>UGX {{ product.buying_price }}</td>
+                    <td>UGX {{ product.selling_price }}</td>
+                </tr>
+
+                {% endfor %}
+
+            </table>
+
+        </div>
+
+        <!-- LOW STOCK PRODUCTS -->
+
+        <div class="section-box">
+
+            <h2>Low Stock Products</h2>
+
+            <table>
+
+                <tr>
+                    <th>Product Name</th>
+                    <th>Remaining Quantity</th>
+                </tr>
+
+                {% for item in low_stock_products %}
+
+                <tr>
+                    <td>{{ item.product_name }}</td>
+                    <td>{{ item.quantity }}</td>
+                </tr>
+
+                {% endfor %}
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <!-- BUSINESS NOTE -->
+
+    <div class="warning">
+
+        <strong>Store Management Note:</strong>
+
+        Ensure all incoming stock is registered with correct
+        buying price, selling price and quantity.
+        Low stock items should be restocked immediately
+        to avoid business interruption.
+
+    </div>
+
+</div>
+
+{% endblock %}
