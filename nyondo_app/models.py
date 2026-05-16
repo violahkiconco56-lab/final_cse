@@ -1,8 +1,12 @@
 from django.db import models
 
 # Create your models here.
+from django.db import models
+
+
 class Stock(models.Model):
 
+    # Product categories
     CATEGORY_CHOICES = [
         ("Cement", "Cement"),
         ("Iron Bars", "Iron Bars"),
@@ -14,18 +18,85 @@ class Stock(models.Model):
         ("Other", "Other"),
     ]
 
+    # Product name
     product_name = models.CharField(max_length=100)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
 
+    # Product category
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES
+    )
+
+    # Number of items available
     quantity = models.PositiveIntegerField()
 
-    buying_price = models.DecimalField(max_digits=12, decimal_places=2)
-    selling_price = models.DecimalField(max_digits=12, decimal_places=2)
+    # Minimum stock before warning
+    reorder_level = models.PositiveIntegerField(default=5)
 
+    # Buying price from supplier
+    buying_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2
+    )
+
+    # Selling price to customers
+    selling_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2
+    )
+
+    # Supplier/company name
     supplier_name = models.CharField(max_length=100)
 
+    # Optional product description
+    description = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    # Automatically saves when product was added
     date_added = models.DateTimeField(auto_now_add=True)
 
+    # Automatically updates when edited
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # BUSINESS LOGIC
+
+    # Profit from one item
+    @property
+    def profit_per_item(self):
+        return self.selling_price - self.buying_price
+
+    # Total possible profit
+    @property
+    def total_profit(self):
+        return self.profit_per_item * self.quantity
+
+    # Total stock value
+    @property
+    def stock_value(self):
+        return self.selling_price * self.quantity
+
+    # Check stock condition
+    @property
+    def stock_status(self):
+
+        # No stock left
+        if self.quantity == 0:
+            return "OUT OF STOCK"
+
+        # Very low stock
+        elif self.quantity < 5:
+            return "CRITICAL"
+
+        # Warning level
+        elif self.quantity <= 10:
+            return "LOW"
+
+        # Healthy stock
+        return "OK"
+
+    # String shown in admin panel
     def __str__(self):
         return self.product_name
     

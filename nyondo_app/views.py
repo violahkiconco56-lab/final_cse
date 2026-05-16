@@ -1,12 +1,13 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.db.models import Sum, F
 from .models import Stock, Sales, SupplierCredit
 from django.contrib.auth.models import User
 # from django.utils import timezone   
+from .forms import StockForm
 
 
 
@@ -91,27 +92,51 @@ def admin_dashboard(request):
 @login_required
 def stock_dashboard(request):
 
+    # Get all products
     stock_products = Stock.objects.all()
 
+    # Total number of products
+    total_products = Stock.objects.count()
+
+    # Total quantity of items in stock
     total_stock_items = Stock.objects.aggregate(
         total=Sum("quantity")
     )["total"] or 0
 
-    stock_value = Stock.objects.aggregate(
+    # Inventory value (buying or selling value — we use selling here)
+    inventory_value = Stock.objects.aggregate(
         total=Sum(F("quantity") * F("selling_price"))
     )["total"] or 0
 
-    low_stock_products = Stock.objects.filter(quantity__lte=10)
+    # Low stock items (≤ 10)
+    low_stock = Stock.objects.filter(quantity__lte=10).count()
+
+    # Out of stock items
     out_of_stock = Stock.objects.filter(quantity=0).count()
 
+    # Future-ready profit calculation (no sales yet)
+    total_profit = Stock.objects.aggregate(
+        total=Sum(
+            (F("selling_price") - F("buying_price")) * F("quantity")
+        )
+    )["total"] or 0
+
+    # Send to template
     context = {
-        "total_products": Stock.objects.count(),
-        "total_stock_items": total_stock_items,
-        "stock_value": stock_value,
-        "low_stock": low_stock_products.count(),
-        "out_of_stock": out_of_stock,
+
         "stock_products": stock_products,
-        "low_stock_products": low_stock_products,
+
+        "total_products": total_products,
+
+        "total_stock_items": total_stock_items,
+
+        "inventory_value": inventory_value,
+
+        "low_stock": low_stock,
+
+        "out_of_stock": out_of_stock,
+
+        "total_profit": total_profit,
     }
 
     return render(request, "nyondo/stock_dashboard.html", context)
@@ -148,18 +173,137 @@ def sales_dashboard(request):
 
     return render(request, "nyondo/sales_dashboard.html", context)
 
-# def add_stock(request):
 
-#     if request.method == "POST":
+# ================= STOCK LIST =================
+@login_required
+def stock_list(request):
 
-#         stock = Stock.objects.create(
-#             product_name=request.POST["product_name"],
-#             quantity=request.POST["quantity"],
-#             buying_price=request.POST["buying_price"],
-#             selling_price=request.POST["selling_price"],
-#             category=request.POST["category"],
-#             supplier_name=request.POST["supplier_name"],
-#         )
+    # Get all stock items
+    stocks = Stock.objects.all().order_by("-date_added")
+
+    # Get search input
+    query = request.GET.get("q")
+
+    # Search by product name
+    if query:
+        stocks = stocks.filter(
+            product_name__icontains=query
+        )
+
+    # Get filter option
+    filter_type = request.GET.get("filter")
+
+    # Show low stock only
+    if filter_type == "low":
+        stocks = stocks.filter(quantity__lte=10)
+
+    # Show out of stock only
+    elif filter_type == "out":
+        stocks = stocks.filter(quantity=0)
+
+    # Send data to template
+    context = {
+        "stocks": stocks,
+        "query": query,
+        "filter_type": filter_type,
+    }
+
+    return render(
+        request,
+        "nyondo/stock_list.html",
+        context
+    )
+
+
+# ================= ADD STOCK =================
+@login_required
+def add_stock(request):
+
+    # Create empty form
+    form = StockForm()
+
+    # If form is submitted
+    if request.method == "POST":
+
+        # Bind form with submitted data
+        form = StockForm(request.POST)
+
+        # Validate form
+        if form.is_valid():
+
+            # Save stock to database
+            stock = form.save()
+
+            # Success message
+            messages.success(
+                request,
+                f"{stock.product_name} added successfully."
+            )
+
+            # Redirect to stock list
+            return redirect("stock_list")
+
+    # Send form to template
+    return render(
+        request,
+        "nyondo/add_stock.html",
+        {"form": form}
+    )
+
+# ================= EDIT STOCK =================
+@login_required
+def edit_stock(request, stock_id):
+
+    # Get stock item or 404
+    stock = get_object_or_404(Stock, id=stock_id)
+
+    # Load form with existing data
+    form = StockForm(instance=stock)
+
+    # If form submitted
+    if request.method == "POST":
+
+        # Bind form with POST + existing instance
+        form = StockForm(request.POST, instance=stock)
+
+        # Validate form
+        if form.is_valid():
+
+            # Save updates
+            stock = form.save()
+
+            # Success message
+            messages.success(
+                request,
+                f"{stock.product_name} updated successfully."
+            )
+
+            # Redirect
+            return redirect("stock_list")
+
+    return render(
+        request,
+        "nyondo/edit_stock.html",
+        {"form": form, "stock": stock}
+    )
+
+# ================= DELETE STOCK =================
+
+@login_required
+def delete_stock(request, stock_id):
+
+    stock = get_object_or_404(Stock, id=stock_id)
+
+    if request.method == "POST":
+
+        name = stock.product_name
+        stock.delete()
+
+        messages.success(request, f"{name} deleted successfully")
+
+        return redirect("stock_list")
+
+    return render(request, "nyondo/delete_stock.html", {"stock": stock})   
 
 #         # AUDIT LOG
 #         AuditLog.objects.create(

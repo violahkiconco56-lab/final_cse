@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Stock List | Nyondo Hardware{% endblock %}
+
+{% block content %}
+
+<div class="header">
+    <h2>Stock List</h2>
+
+    <a href="{% url 'add_stock' %}" class="btn btn-primary">
+        + Add Stock
+    </a>
+</div>
+
+<!-- 🔍 SEARCH + FILTER -->
+<form method="GET" class="filters">
+
+    <input 
+        type="text" 
+        name="q" 
+        placeholder="Search product..."
+        value="{{ query|default:'' }}"
+    >
+
+    <select name="filter">
+
+        <option value="">All Stock</option>
+
+        <option value="low" {% if filter_type == "low" %}selected{% endif %}>
+            Low Stock
+        </option>
+
+        <option value="out" {% if filter_type == "out" %}selected{% endif %}>
+            Out of Stock
+        </option>
+
+    </select>
+
+    <button type="submit" class="btn btn-primary">
+        Apply
+    </button>
+
+</form>
+
+<!-- 📦 TABLE -->
+<div class="table-container">
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Cost</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Supplier</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for stock in stocks %}
+
+            <tr>
+
+                <!-- PRODUCT -->
+                <td>{{ stock.product_name }}</td>
+
+                <!-- CATEGORY -->
+                <td>{{ stock.category }}</td>
+
+                <!-- BUYING PRICE -->
+                <td>UGX {{ stock.buying_price }}</td>
+
+                <!-- SELLING PRICE -->
+                <td>UGX {{ stock.selling_price }}</td>
+
+                <!-- QUANTITY WITH STATUS COLORS -->
+                <td class="
+                    {% if stock.quantity == 0 %}
+                        out-stock
+                    {% elif stock.quantity <= 5 %}
+                        low-stock
+                    {% else %}
+                        in-stock
+                    {% endif %}
+                ">
+                    {{ stock.quantity }}
+                </td>
+
+                <!-- SUPPLIER -->
+                <td>{{ stock.supplier_name|default:"-" }}</td>
+
+                <!-- DATE -->
+                <td>{{ stock.date_added|date:"Y-m-d" }}</td>
+
+                <!-- ACTIONS -->
+                <td>
+
+                    <a href="{% url 'edit_stock' stock.id %}" class="btn btn-primary">
+                        Edit
+                    </a>
+
+                    <a href="{% url 'delete_stock' stock.id %}" class="btn btn-danger">
+                        Delete
+                    </a>
+
+                </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+                <td colspan="8" class="empty">
+                    No stock available
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+<!-- 🎨 SMALL CLEAN STYLES (MATCH BASE DESIGN) -->
+<style>
+
+.filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.filters input,
+.filters select {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    outline: none;
+}
+
+.filters input:focus,
+.filters select:focus {
+    border-color: #f4b400;
+}
+
+/* STOCK COLORS */
+.low-stock {
+    color: orange;
+    font-weight: bold;
+}
+
+.out-stock {
+    color: red;
+    font-weight: bold;
+}
+
+.in-stock {
+    color: green;
+    font-weight: bold;
+}
+
+/* TABLE IMPROVEMENT (uses your base styling) */
+.table-container {
+    overflow-x: auto;
+    margin-top: 10px;
+}
+
+</style>
+
+{% endblock %}

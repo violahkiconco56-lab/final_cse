@@ -28,5 +28,12 @@ urlpatterns = [
     path('stock_dashboard/', views.stock_dashboard, name='stock_dashboard'),
     path('sales_dashboard/', views.sales_dashboard, name='sales_dashboard'),
 
+    # stock management
+    path("stock/", views.stock_list, name="stock_list"),
+    path("stock/add/", views.add_stock, name="add_stock"),
+    path("stock/edit/<int:stock_id>/", views.edit_stock, name="edit_stock"),
+    path("stock/delete/<int:stock_id>/", views.delete_stock, name="delete_stock"),
+    
+
     
 ]

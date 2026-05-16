@@ -2,24 +2,21 @@
 
 {% block content %}
 
-<!-- MAIN CONTENT -->
-
+<!-- ================= DASHBOARD WRAPPER ================= -->
 <div class="main-content">
 
     <!-- HEADER -->
     <div class="header">
 
-        <h1>Store Manager Dashboard</h1>
+        <h1>Stock Management Dashboard</h1>
 
         <p>
-            Manage stock registration, monitor inventory levels,
-            track low stock products and supervise stock movement.
+            Monitor inventory levels, track stock value, and identify products that need restocking.
         </p>
 
     </div>
 
-    <!-- DASHBOARD CARDS -->
-
+    <!-- ================= KPI CARDS ================= -->
     <div class="dashboard-cards">
 
         <div class="card">
@@ -28,8 +25,18 @@
         </div>
 
         <div class="card">
-            <h3>Total Stock Items</h3>
+            <h3>Total Items in Stock</h3>
             <p>{{ total_stock_items }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Inventory Value</h3>
+            <p>UGX {{ inventory_value }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Total Profit (Est.)</h3>
+            <p>UGX {{ total_profit }}</p>
         </div>
 
         <div class="card">
@@ -38,72 +45,105 @@
         </div>
 
         <div class="card">
-            <h3>Out Of Stock</h3>
+            <h3>Out of Stock</h3>
             <p>{{ out_of_stock }}</p>
-        </div>
-
-        <div class="card">
-            <h3>Stock Value</h3>
-            <p>UGX {{ stock_value }}</p>
         </div>
 
     </div>
 
-    <!-- STOCK TABLE -->
-
+    <!-- ================= STOCK TABLE ================= -->
     <div class="section">
 
         <div class="section-box">
 
-            <h2>Available Stock</h2>
+            <h2>All Stock Items</h2>
 
             <table>
 
-                <tr>
-                    <th>Product Name</th>
-                    <th>Category</th>
-                    <th>Quantity</th>
-                    <th>Buying Price</th>
-                    <th>Selling Price</th>
-                </tr>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Qty</th>
+                        <th>Buying Price</th>
+                        <th>Selling Price</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
 
-                {% for product in stock_products %}
+                <tbody>
 
-                <tr>
-                    <td>{{ product.product_name }}</td>
-                    <td>{{ product.category }}</td>
-                    <td>{{ product.quantity }}</td>
-                    <td>UGX {{ product.buying_price }}</td>
-                    <td>UGX {{ product.selling_price }}</td>
-                </tr>
+                    {% for product in stock_products %}
 
-                {% endfor %}
+                    <tr>
+
+                        <td>{{ product.product_name }}</td>
+                        <td>{{ product.category }}</td>
+                        <td>{{ product.quantity }}</td>
+                        <td>UGX {{ product.buying_price }}</td>
+                        <td>UGX {{ product.selling_price }}</td>
+
+                        <!-- STATUS LOGIC -->
+                        <td>
+
+                            {% if product.quantity == 0 %}
+                                <span style="color:red;font-weight:bold;">OUT</span>
+
+                            {% elif product.quantity <= product.reorder_level %}
+                                <span style="color:orange;font-weight:bold;">LOW</span>
+
+                            {% else %}
+                                <span style="color:green;font-weight:bold;">OK</span>
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">No stock available</td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
 
             </table>
 
         </div>
 
-        <!-- LOW STOCK PRODUCTS -->
-
+        <!-- ================= LOW STOCK PANEL ================= -->
         <div class="section-box">
 
-            <h2>Low Stock Products</h2>
+            <h2>Low Stock Alerts</h2>
 
             <table>
 
-                <tr>
-                    <th>Product Name</th>
-                    <th>Remaining Quantity</th>
-                </tr>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Qty Left</th>
+                        <th>Reorder Level</th>
+                    </tr>
+                </thead>
 
-                {% for item in low_stock_products %}
+                <tbody>
 
-                <tr>
-                    <td>{{ item.product_name }}</td>
-                    <td>{{ item.quantity }}</td>
-                </tr>
+                    {% for item in stock_products %}
 
-                {% endfor %}
+                        {% if item.quantity <= item.reorder_level %}
+
+                        <tr>
+                            <td>{{ item.product_name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.reorder_level }}</td>
+                        </tr>
+
+                        {% endif %}
+
+                    {% endfor %}
+
+                </tbody>
 
             </table>
 
@@ -111,16 +151,13 @@
 
     </div>
 
-    <!-- BUSINESS NOTE -->
-
+    <!-- ================= BUSINESS NOTE ================= -->
     <div class="warning">
 
-        <strong>Store Management Note:</strong>
+        <strong>System Insight:</strong>
 
-        Ensure all incoming stock is registered with correct
-        buying price, selling price and quantity.
-        Low stock items should be restocked immediately
-        to avoid business interruption.
+        Products at or below reorder level should be restocked immediately
+        to prevent sales interruption and stockouts.
 
     </div>
 
