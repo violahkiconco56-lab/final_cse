@@ -1,0 +1,100 @@
+<!-- templates/nyondo/delete_deposit.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Deposit</title>
+
+    <style>
+
+        body{
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container{
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        h2{
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+
+        p{
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .btn{
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-delete{
+            background: #dc3545;
+        }
+
+        .btn-cancel{
+            background: #6c757d;
+        }
+
+        .buttons{
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Delete Deposit</h2>
+
+    <p>
+        Are you sure you want to delete
+        <strong>{{ deposit.customer_name }}</strong>'s deposit?
+    </p>
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        <div class="buttons">
+
+            <button type="submit" class="btn btn-delete">
+                Yes, Delete
+            </button>
+
+            <a href="{% url 'deposit_list' %}" class="btn btn-cancel">
+                Cancel
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+</body>
+</html>

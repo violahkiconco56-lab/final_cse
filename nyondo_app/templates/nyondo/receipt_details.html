@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt - {{ receipt.receipt_number }}</title>
+
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+
+        .receipt-box{
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .header{
+            text-align: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .header h2{
+            margin: 0;
+            color: #333;
+        }
+
+        .info{
+            margin-top: 20px;
+        }
+
+        .info p{
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        table{
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        table th, table td{
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        table th{
+            background: #f1f1f1;
+        }
+
+        .total{
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .total h3{
+            margin: 5px 0;
+        }
+
+        .status{
+            font-weight: bold;
+        }
+
+        .paid{ color: green; }
+        .pending{ color: orange; }
+
+        .btn{
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 15px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .btn-print{
+            background: #28a745;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="receipt-box">
+
+    <!-- HEADER -->
+    <div class="header">
+        <h2>NYONDO HARDWARE LTD</h2>
+        <p>Official Sales Receipt</p>
+        <p><strong>Receipt No:</strong> {{ receipt.receipt_number }}</p>
+    </div>
+
+    <!-- CUSTOMER INFO -->
+    <div class="info">
+        <p><strong>Customer:</strong> {{ receipt.customer_name }}</p>
+        <p><strong>Phone:</strong> {{ receipt.customer_phone }}</p>
+        <p><strong>Date:</strong> {{ receipt.sale_date }}</p>
+    </div>
+
+    <!-- PRODUCT TABLE -->
+    <table>
+        <tr>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+        </tr>
+
+        <tr>
+            <td>{{ receipt.product.product_name }}</td>
+            <td>{{ receipt.quantity }}</td>
+            <td>{{ receipt.unit_price }}</td>
+            <td>{{ receipt.total_amount }}</td>
+        </tr>
+    </table>
+
+    <!-- FINANCIAL BREAKDOWN -->
+    <div class="total">
+        <h3>Transport: {{ receipt.transport_charge }}</h3>
+        <h3>Final Total: {{ receipt.final_total }}</h3>
+
+        <h3 class="status">
+            Status:
+            {% if receipt.payment_status == "Paid" %}
+                <span class="paid">PAID</span>
+            {% else %}
+                <span class="pending">PENDING</span>
+            {% endif %}
+        </h3>
+    </div>
+
+    <!-- BUTTONS -->
+    <a href="{% url 'receipts_list' %}" class="btn">Back</a>
+    <a href="{% url 'receipt_print' receipt.id %}" class="btn btn-print">Print Receipt</a>
+
+</div>
+
+</body>
+</html>

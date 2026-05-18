@@ -1,0 +1,158 @@
+<!-- templates/nyondo/edit_deposit.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Deposit</title>
+
+    <style>
+
+        body{
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container{
+            max-width: 650px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        h2{
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        form{
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        label{
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        input,
+        select{
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .btn{
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .btn-update{
+            background: #007bff;
+        }
+
+        .btn-back{
+            background: #6c757d;
+        }
+
+        .buttons{
+            display: flex;
+            gap: 10px;
+        }
+
+        .errorlist{
+            color: red;
+            list-style: none;
+            padding: 0;
+            margin: 5px 0;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Edit Deposit</h2>
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        <div>
+            <label>Customer Name</label>
+            {{ form.customer_name }}
+            {{ form.customer_name.errors }}
+        </div>
+
+        <div>
+            <label>NIN Number</label>
+            {{ form.nin_number }}
+            {{ form.nin_number.errors }}
+        </div>
+
+        <div>
+            <label>Phone Number</label>
+            {{ form.phone_number }}
+            {{ form.phone_number.errors }}
+        </div>
+
+        <div>
+            <label>Product</label>
+            {{ form.product_name }}
+            {{ form.product_name.errors }}
+        </div>
+
+        <div>
+            <label>Unit Price</label>
+            {{ form.unit_price }}
+            {{ form.unit_price.errors }}
+        </div>
+
+        <div>
+            <label>Quantity</label>
+            {{ form.quantity }}
+            {{ form.quantity.errors }}
+        </div>
+
+        <div>
+            <label>Amount Deposited</label>
+            {{ form.amount_deposited }}
+            {{ form.amount_deposited.errors }}
+        </div>
+
+        {{ form.non_field_errors }}
+
+        <div class="buttons">
+
+            <button type="submit" class="btn btn-update">
+                Update Deposit
+            </button>
+
+            <a href="{% url 'deposit_list' %}" class="btn btn-back">
+                Back
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+</body>
+</html>

@@ -33,7 +33,28 @@ urlpatterns = [
     path("stock/add/", views.add_stock, name="add_stock"),
     path("stock/edit/<int:stock_id>/", views.edit_stock, name="edit_stock"),
     path("stock/delete/<int:stock_id>/", views.delete_stock, name="delete_stock"),
+
+    # sales management
+    path("sales/", views.sales_list, name="sales_list"),
+    path("sales/add/", views.add_sale, name="add_sale"),
+    path("sales/edit/<int:sale_id>/", views.edit_sale, name="edit_sale"),
+    path("sales/delete/<int:sale_id>/", views.delete_sale, name="delete_sale"),
+
+    #receipt view
+    path("receipts/", views.receipts_list, name="receipts_list"),
+    path("receipts/<int:sale_id>/", views.sale_receipt, name="sale_receipt"),
+    path("receipts/print/<int:sale_id>/", views.receipt_print, name="receipt_print"),
+
+    # supplier credit management
+    path("supplier-credits/", views.credit_list, name="credit_list"), 
+    path("supplier-credits/add/", views.add_credit, name="add_credit"),
+    path("supplier-credits/edit/<int:credit_id>/", views.edit_credit, name="edit_credit"),
+    path("supplier-credits/delete/<int:credit_id>/", views.delete_credit, name="delete_credit"),
     
 
-    
+    # deposit scheme management
+    path("deposit-schemes/", views.deposit_list, name="deposit_list"),
+    path("deposit-schemes/add/", views.add_deposit, name="add_deposit"),
+    path("deposit-schemes/edit/<int:pk>/", views.edit_deposit, name="edit_deposit"),
+    path("deposit-schemes/delete/<int:pk>/", views.delete_deposit, name="delete_deposit"),
 ]

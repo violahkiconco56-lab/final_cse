@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Receipts</title>
+
+    <style>
+        body{
+            font-family: Arial;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+
+        .container{
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        table{
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td{
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th{
+            background: #eee;
+        }
+
+        .btn{
+            padding: 6px 10px;
+            text-decoration: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 13px;
+        }
+
+        .view{ background: #007bff; }
+        .print{ background: #28a745; }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Receipts History</h2>
+
+    <table>
+        <tr>
+            <th>Receipt No</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+
+        {% for r in receipts %}
+
+        <tr>
+            <td>{{ r.receipt_number }}</td>
+            <td>{{ r.customer_name }}</td>
+            <td>{{ r.product.product_name }}</td>
+            <td>{{ r.final_total }}</td>
+            <td>{{ r.payment_status }}</td>
+            <td>
+                <a href="{% url 'receipt_detail' r.id %}" class="btn view">View</a>
+                <a href="{% url 'receipt_print' r.id %}" class="btn print">Print</a>
+            </td>
+        </tr>
+
+        {% empty %}
+        <tr>
+            <td colspan="6">No receipts found</td>
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+</div>
+
+</body>
+</html>

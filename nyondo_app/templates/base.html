@@ -1,88 +1,103 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Nyondo Stock System</title>
+    <title>Nyondo System</title>
 
     <style>
         body {
             margin: 0;
             font-family: Arial, sans-serif;
+            display: flex;
             background: #f4f6f9;
         }
 
-        /* NAVBAR */
-        .navbar {
-            background: #0b1f3a; /* dark blue */
+        /* SIDEBAR */
+        .sidebar {
+            width: 240px;
+            height: 100vh;
+            background: #0b1f3a;
             color: white;
-            padding: 15px 20px;
+            position: fixed;
+            padding-top: 20px;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            color: #ffd700;
+            margin-bottom: 20px;
+        }
+
+        .sidebar a {
+            display: block;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+        }
+
+        .sidebar a:hover {
+            background: #ffd700;
+            color: #0b1f3a;
+        }
+
+        /* MAIN AREA */
+        .main {
+            margin-left: 240px;
+            width: 100%;
+        }
+
+        /* TOPBAR */
+        .topbar {
+            background: white;
+            padding: 15px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        .navbar .logo {
-            font-size: 20px;
-            font-weight: bold;
-            color: #ffd700; /* yellow */
-        }
-
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            margin-left: 15px;
-            font-weight: bold;
-        }
-
-        .navbar a:hover {
-            color: #ffd700;
-        }
-
-        /* LAYOUT */
         .container {
             padding: 20px;
         }
-        .header {
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 25px;
-    box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
-}
-
-.dashboard-cards {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-.card {
-    background-color: white;
-    width: 230px;
-    padding: 20px;
-    border-radius: 10px; 
-    box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
-}   
     </style>
 </head>
 
 <body>
 
-<!-- NAVBAR (ONE PLACE FOR ALL PAGES) -->
-<div class="navbar">
-    <div class="logo">NYONDO SYSTEM</div>
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <h2>NYONDO</h2>
 
-    <div>
-        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+    {% if user.is_superuser %}
+        <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
         <a href="{% url 'stock_dashboard' %}">Stock</a>
         <a href="{% url 'sales_dashboard' %}">Sales</a>
-        <a href="{% url 'logout' %}">Logout</a>
-    </div>
+        <a href="{% url 'deposit_list' %}">Deposits</a>
+        <a href="{% url 'credit_list' %}">Supplier Credit</a>
+
+    {% elif user.groups.first.name == "Storekeeper" %}
+        <a href="{% url 'stock_dashboard' %}">Stock</a>
+        <a href="{% url 'credit_list' %}">Supplier Credit</a>
+
+    {% elif user.groups.first.name == "Sales" %}
+        <a href="{% url 'sales_list' %}">Sales</a>
+        <a href="{% url 'add_sale' %}">Add Sale</a>
+    {% endif %}
+
+    <a href="{% url 'logout' %}">Logout</a>
 </div>
 
-<!-- PAGE CONTENT WILL GO HERE -->
-<div class="container">
-    {% block content %}
-    {% endblock %}
+<!-- MAIN CONTENT -->
+<div class="main">
+
+    <div class="topbar">
+        <div><b>Dashboard System</b></div>
+        <div>{{ user.username }}</div>
+    </div>
+
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+
 </div>
 
 </body>

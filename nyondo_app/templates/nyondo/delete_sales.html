@@ -1,0 +1,100 @@
+{% extends "nyondo/base.html" %}
+{% block content %}
+
+<div class="delete-container">
+
+    <h2>Delete Sale</h2>
+
+    <div class="warning-box">
+        ⚠️ You are about to delete this sale permanently.
+    </div>
+
+    <div class="sale-info">
+        <p><strong>Customer:</strong> {{ sale.customer_name }}</p>
+        <p><strong>Product:</strong> {{ sale.product.product_name }}</p>
+        <p><strong>Quantity:</strong> {{ sale.quantity }}</p>
+        <p><strong>Total:</strong> {{ sale.final_total }}</p>
+        <p><strong>Date:</strong> {{ sale.sale_date }}</p>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="buttons">
+            <a href="{% url 'sales_list' %}" class="btn-cancel">Cancel</a>
+            <button type="submit" class="btn-delete">Yes, Delete</button>
+        </div>
+
+    </form>
+
+</div>
+
+<style>
+
+.delete-container{
+    max-width:600px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+h2{
+    color:#0b1f3a;
+    margin-bottom:15px;
+}
+
+.warning-box{
+    background:#fff3cd;
+    color:#856404;
+    padding:10px;
+    border-radius:6px;
+    margin-bottom:15px;
+    font-weight:bold;
+}
+
+.sale-info{
+    background:#f8f9fa;
+    padding:15px;
+    border-radius:6px;
+    margin-bottom:20px;
+}
+
+.sale-info p{
+    margin:6px 0;
+}
+
+.buttons{
+    display:flex;
+    justify-content:space-between;
+}
+
+.btn-cancel{
+    background:#6c757d;
+    color:white;
+    padding:10px 15px;
+    text-decoration:none;
+    border-radius:6px;
+}
+
+.btn-delete{
+    background:#dc3545;
+    color:white;
+    padding:10px 15px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.btn-delete:hover{
+    background:#c82333;
+}
+
+.btn-cancel:hover{
+    background:#5a6268;
+}
+
+</style>
+
+{% endblock %}

@@ -1,13 +1,15 @@
+from urllib import request
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-from django.db.models import Sum, F
-from .models import Stock, Sales, SupplierCredit
+from django.db.models import DecimalField, ExpressionWrapper, Sum, F, Q, Count
+from .models import *
 from django.contrib.auth.models import User
-# from django.utils import timezone   
-from .forms import StockForm
+from django.utils import timezone   
+from .forms import StockForm, SupplierCreditForm, DepositSchemeForm
 
 
 
@@ -54,27 +56,68 @@ def logout_view(request):
 @login_required
 def admin_dashboard(request):
 
-    total_revenue = Sales.objects.aggregate(
-        total=Sum("total_amount")
-    )["total"] or 0
+    # =========================
+    # GET ALL SALES
+    # =========================
+    sales = Sales.objects.all()
 
+    # =========================
+    # TOTAL REVENUE
+    # Includes transport charges
+    # =========================
+    total_revenue = sum(
+        sale.final_total
+        for sale in sales
+    )
+
+    # =========================
+    # TOTAL STOCK VALUE
+    # =========================
     stock_value = Stock.objects.aggregate(
-        total=Sum(F("quantity") * F("selling_price"))
+        total=Sum(
+            ExpressionWrapper(
+                F("quantity") * F("selling_price"),
+                output_field=DecimalField()
+            )
+        )
     )["total"] or 0
 
+    # =========================
+    # TOTAL CREDIT
+    # =========================
     total_credit = SupplierCredit.objects.aggregate(
         total=Sum("balance")
     )["total"] or 0
 
+    # =========================
+    # TOTAL ITEMS
+    # =========================
     total_items = Stock.objects.aggregate(
         total=Sum("quantity")
     )["total"] or 0
 
+    # =========================
+    # TOTAL USERS
+    # =========================
     total_users = User.objects.count()
 
-    low_stock = Stock.objects.filter(quantity__lte=10).count()
-    out_of_stock = Stock.objects.filter(quantity=0).count()
+    # =========================
+    # LOW STOCK
+    # =========================
+    low_stock = Stock.objects.filter(
+        quantity__lte=10
+    ).count()
 
+    # =========================
+    # OUT OF STOCK
+    # =========================
+    out_of_stock = Stock.objects.filter(
+        quantity=0
+    ).count()
+
+    # =========================
+    # CONTEXT
+    # =========================
     context = {
         "total_revenue": total_revenue,
         "stock_value": stock_value,
@@ -85,8 +128,14 @@ def admin_dashboard(request):
         "out_of_stock": out_of_stock,
     }
 
-    return render(request, "nyondo/admin_dashboard.html", context)
-
+    # =========================
+    # RENDER PAGE
+    # =========================
+    return render(
+        request,
+        "nyondo/admin_dashboard.html",
+        context
+    )
 #stock dashboard view
 
 @login_required
@@ -142,39 +191,74 @@ def stock_dashboard(request):
     return render(request, "nyondo/stock_dashboard.html", context)
 
 #sales dashboard view
+
 @login_required
 def sales_dashboard(request):
 
+    # ================= BASIC KPIs =================
     total_sales = Sales.objects.count()
 
     total_revenue = Sales.objects.aggregate(
-        total=Sum("total_amount")
+        total=Sum("quantity")
     )["total"] or 0
 
-    recent_sales = Sales.objects.order_by("-sale_date")[:10]
+    total_profit = sum(
+        sale.profit for sale in Sales.objects.select_related("product")
+    )
 
-    top_products = Sales.objects.values("product_name").annotate(
-        units_sold=Sum("quantity")
-    ).order_by("-units_sold")[:5]
+    # ================= PAYMENT STATUS =================
+    paid_sales = Sales.objects.filter(payment_status="Paid").count()
+    pending_sales = Sales.objects.filter(payment_status="Pending").count()
 
+    # ================= TODAY SALES =================
+    today = timezone.now().date()
+
+    today_sales = Sales.objects.filter(
+        sale_date__date=today
+    ).count()
+
+    today_revenue = sum(
+        sale.final_total for sale in Sales.objects.filter(
+            sale_date__date=today
+        )
+    )
+
+    # ================= TOP PRODUCTS =================
+    top_products = (
+        Sales.objects.values("product__product_name")
+        .annotate(
+            total_qty=Sum("quantity")
+        )
+        .order_by("-total_qty")[:5]
+    )
+
+    # ================= LOW STOCK ALERT =================
+    low_stock = Stock.objects.filter(quantity__lte=10)
+
+    # ================= CONTEXT =================
     context = {
+
+        # KPIs
         "total_sales": total_sales,
         "total_revenue": total_revenue,
-        "total_customers": Sales.objects.values("customer_name").distinct().count(),
-        "transport_charges": Sales.objects.aggregate(
-            total=Sum("transport_charge")
-        )["total"] or 0,
-        "pending_payments": Sales.objects.filter(payment_status="Pending").aggregate(
-            total=Sum("total_amount")
-        )["total"] or 0,
-        "recent_sales": recent_sales,
+        "total_profit": total_profit,
+
+        # Payments
+        "paid_sales": paid_sales,
+        "pending_sales": pending_sales,
+
+        # Today
+        "today_sales": today_sales,
+        "today_revenue": today_revenue,
+
+        # Analytics
         "top_products": top_products,
+        "low_stock": low_stock,
     }
 
     return render(request, "nyondo/sales_dashboard.html", context)
 
-
-# ================= STOCK LIST =================
+#  STOCK LIST SECTION
 @login_required
 def stock_list(request):
 
@@ -303,7 +387,402 @@ def delete_stock(request, stock_id):
 
         return redirect("stock_list")
 
-    return render(request, "nyondo/delete_stock.html", {"stock": stock})   
+    return render(request, "nyondo/delete_stock.html", {"stock": stock}) 
+
+#sales list view
+
+# ================= SALES LIST =================
+@login_required
+def sales_list(request):
+
+    query = request.GET.get("q")
+
+    sales = Sales.objects.select_related("product").order_by("-sale_date")
+
+    if query:
+        sales = sales.filter(
+            Q(customer_name__icontains=query) |
+            Q(product__product_name__icontains=query) |
+            Q(receipt_no__icontains=query)
+        )
+
+    return render(
+        request,
+        "nyondo/sales_list.html",
+        {
+            "sales": sales,
+            "query": query
+        }
+    )
+
+
+# ================= ADD SALE =================
+@login_required
+def add_sale(request):
+
+    products = Stock.objects.all()
+
+    if request.method == "POST":
+
+        product = get_object_or_404(
+            Stock,
+            id=request.POST["product"]
+        )
+
+        quantity_sold = int(request.POST["quantity"])
+
+        # Prevent overselling
+        if quantity_sold > product.quantity:
+            messages.error(request, "Not enough stock available.")
+            return redirect("add_sale")
+
+        sale = Sales.objects.create(
+            customer_name=request.POST["customer_name"],
+            customer_phone=request.POST["customer_phone"],
+            product=product,
+            quantity=quantity_sold,
+            unit_price=product.selling_price,
+            distance_km=request.POST.get("distance_km", 0),
+            payment_status=request.POST["payment_status"],
+        )
+
+        # reduce stock
+        product.quantity -= quantity_sold
+        product.save()
+
+        messages.success(
+            request,
+            f"Sale created successfully. Receipt No: {sale.receipt_no}"
+        )
+
+        return redirect("sales_list")
+
+    return render(request, "nyondo/add_sale.html", {"products": products})
+
+
+# ================= EDIT SALE =================
+@login_required
+def edit_sale(request, sale_id):
+
+    sale = get_object_or_404(Sales, id=sale_id)
+    products = Stock.objects.all()
+
+    if request.method == "POST":
+
+        # restore old stock
+        sale.product.quantity += sale.quantity
+        sale.product.save()
+
+        new_product = get_object_or_404(
+            Stock,
+            id=request.POST["product"]
+        )
+
+        new_quantity = int(request.POST["quantity"])
+
+        # prevent overselling
+        if new_quantity > new_product.quantity:
+            messages.error(request, "Not enough stock available.")
+            return redirect("edit_sale", sale_id=sale.id)
+
+        sale.customer_name = request.POST["customer_name"]
+        sale.customer_phone = request.POST["customer_phone"]
+        sale.product = new_product
+        sale.quantity = new_quantity
+        sale.unit_price = new_product.selling_price
+        sale.distance_km = request.POST.get("distance_km", 0)
+        sale.payment_status = request.POST["payment_status"]
+
+        sale.save()
+
+        # reduce new stock
+        new_product.quantity -= new_quantity
+        new_product.save()
+
+        messages.success(request, "Sale updated successfully.")
+        return redirect("sales_list")
+
+    return render(
+        request,
+        "nyondo/edit_sale.html",
+        {
+            "sale": sale,
+            "products": products
+        }
+    )
+
+
+# ================= SALE RECEIPT (VIEW) =================
+@login_required
+def receipts_list(request):
+
+    receipts = Sales.objects.all().order_by("-sale_date")
+
+    return render(
+        request,
+        "nyondo/receipts_list.html",
+        {"receipts": receipts}
+    )
+
+@login_required
+def sale_receipt(request, sale_id):
+
+    sale = get_object_or_404(Sales, id=sale_id)
+
+    return render(
+        request,
+        "nyondo/receipt.html",
+        {"sale": sale}
+    )
+
+@login_required
+def receipt_print(request, sale_id):
+
+    sale = get_object_or_404(Sales, id=sale_id)
+
+    return render(
+        request,
+        "nyondo/receipt_print.html",
+        {"sale": sale}
+    )
+
+# ================= DELETE SALE =================
+@login_required
+def delete_sale(request, sale_id):
+
+    sale = get_object_or_404(Sales, id=sale_id)
+
+    if request.method == "POST":
+
+        # restore stock
+        sale.product.quantity += sale.quantity
+        sale.product.save()
+
+        sale.delete()
+
+        messages.success(request, "Sale deleted successfully.")
+        return redirect("sales_list")
+
+    return render(
+        request,
+        "nyondo/delete_sale.html",
+        {
+            "sale": sale
+        }
+    )
+
+# LIST ALL SUPPLIER CREDITS
+@login_required
+def credit_list(request):
+
+    credits = SupplierCredit.objects.select_related(
+        "supplier"
+    ).order_by("-date_supplied")
+
+    context = {"credits": credits}
+    return render(request, "nyondo/credit_list.html", context)
+        
+
+
+# ADD NEW CREDIT
+@login_required
+def add_credit(request):
+
+    if request.method == "POST":
+
+        form = SupplierCreditForm(request.POST)
+
+        if form.is_valid():
+
+            form.save()
+
+            messages.success(
+                request,
+                "Supplier credit added successfully."
+            )
+
+            return redirect("credit_list")
+
+    else:
+        form = SupplierCreditForm()
+
+    context = {
+        "form": form
+    }
+
+    return render(
+        request,
+        "nyondo/add_credit.html",
+        context
+    )
+
+
+# EDIT CREDIT
+@login_required
+def edit_credit(request, pk):
+
+    credit = get_object_or_404(
+        SupplierCredit,
+        pk=pk
+    )
+
+    if request.method == "POST":
+
+        form = SupplierCreditForm(
+            request.POST,
+            instance=credit
+        )
+
+        if form.is_valid():
+
+            form.save()
+
+            messages.success(
+                request,
+                "Supplier credit updated successfully."
+            )
+
+            return redirect("credit_list")
+
+    else:
+
+        form = SupplierCreditForm(
+            instance=credit
+        )
+
+    context = {
+        "form": form,
+        "credit": credit
+    }
+
+    return render(
+        request,
+        "nyondo/edit_credit.html",
+        context
+    )
+
+# DELETE CREDIT
+@login_required
+def delete_credit(request, pk):
+
+    credit = get_object_or_404(
+        SupplierCredit,
+        pk=pk
+    )
+
+    if request.method == "POST":
+
+        credit.delete()
+
+        messages.success(
+            request,
+            "Supplier credit deleted successfully."
+        )
+
+        return redirect("credit_list")
+
+    context = {
+        "credit": credit
+    }
+
+    return render(
+        request,
+        "nyondo/delete_credit.html",
+        context
+    )
+
+#deposit scheme list view
+
+# ================= DEPOSIT LIST =================
+@login_required
+def deposit_list(request):
+
+    deposits = DepositScheme.objects.all().order_by("-registration_date")
+
+    context = {
+        "deposits": deposits
+    }
+
+    return render(
+        request,
+        "nyondo/deposit_list.html",
+        context
+    )
+
+
+# ================= ADD DEPOSIT =================
+@login_required
+def add_deposit(request):
+
+    form = DepositSchemeForm(request.POST or None)
+
+    if form.is_valid():
+        deposit = form.save()
+
+        messages.success(
+            request,
+            "Deposit registered successfully."
+        )
+
+        return redirect("deposit_list")
+
+    return render(
+        request,
+        "nyondo/add_deposit.html",
+        {"form": form}
+    )
+
+
+# ================= EDIT DEPOSIT =================
+@login_required
+def edit_deposit(request, pk):
+
+    deposit = get_object_or_404(DepositScheme, pk=pk)
+
+    form = DepositSchemeForm(request.POST or None, instance=deposit)
+
+    if form.is_valid():
+        form.save()
+
+        messages.success(
+            request,
+            "Deposit updated successfully."
+        )
+
+        return redirect("deposit_list")
+
+    return render(
+        request,
+        "nyondo/edit_deposit.html",
+        {
+            "form": form,
+            "deposit": deposit
+        }
+    )
+
+
+# ================= DELETE DEPOSIT =================
+@login_required
+def delete_deposit(request, pk):
+
+    deposit = get_object_or_404(DepositScheme, pk=pk)
+
+    if request.method == "POST":
+        deposit.delete()
+
+        messages.success(
+            request,
+            "Deposit deleted successfully."
+        )
+
+        return redirect("deposit_list")
+
+    return render(
+        request,
+        "nyondo/delete_deposit.html",
+        {"deposit": deposit}
+    )
+
 
 #         # AUDIT LOG
 #         AuditLog.objects.create(
@@ -315,16 +794,6 @@ def delete_stock(request, stock_id):
 #         return redirect("stock_dashboard")
     
 # def add_sale(request):
-
-#     if request.method == "POST":
-
-#         sale = Sales.objects.create(
-#             customer_name=request.POST["customer_name"],
-#             product_name=request.POST["product_name"],
-#             quantity=request.POST["quantity"],
-#             unit_price=request.POST["unit_price"],
-#             total_amount=request.POST["total_amount"],
-#         )
 
 #         # 🔥 AUDIT LOG
 #         AuditLog.objects.create(

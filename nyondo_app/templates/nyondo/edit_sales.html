@@ -1,0 +1,42 @@
+{% extends "nyondo/base.html" %}
+{% block content %}
+
+<div class="form-container">
+
+    <h2>Edit Sale</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="grid">
+
+            <div class="field">
+                <label>Customer Name</label>
+                <input type="text" name="customer_name" value="{{ sale.customer_name }}" required>
+            </div>
+
+            <div class="field">
+                <label>Phone Number</label>
+                <input type="text" name="customer_phone" value="{{ sale.customer_phone }}" required>
+            </div>
+
+            <div class="field">
+                <label>Product</label>
+                <select name="product" required>
+                    {% for product in products %}
+                        <option value="{{ product.id }}"
+                            {% if sale.product.id == product.id %}selected{% endif %}>
+                            {{ product.product_name }} (Stock: {{ product.quantity }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Quantity</label>
+                <input type="number" name="quantity" value="{{ sale.quantity }}" min="1" required>
+            </div>
+
+            <div class="field">
+                <label>Distance (KM)</label>
+                <input type="number" name="distance_km" value="{{ sale.distance_km }}" min="0">

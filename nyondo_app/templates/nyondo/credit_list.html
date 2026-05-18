@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Supplier Credits</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .btn-add {
+            background: #28a745;
+        }
+
+        .btn-edit {
+            background: #007bff;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th, table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        table th {
+            background: #f1f1f1;
+        }
+
+        .status-pending {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .status-cleared {
+            color: green;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="top-bar">
+        <h2>Supplier Credit List</h2>
+
+        <a href="{% url 'add_credit' %}" class="btn btn-add">
+            + Add Credit
+        </a>
+    </div>
+
+    <table>
+
+        <tr>
+            <th>Supplier</th>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Total Cost</th>
+            <th>Paid</th>
+            <th>Balance</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+
+        {% for credit in credits %}
+
+        <tr>
+
+            <td>{{ credit.supplier.name }}</td>
+            <td>{{ credit.item_name }}</td>
+            <td>{{ credit.quantity }}</td>
+            <td>{{ credit.total_cost }}</td>
+            <td>{{ credit.amount_paid }}</td>
+            <td>{{ credit.balance }}</td>
+
+            <td>
+                {% if credit.status == "Cleared" %}
+                    <span class="status-cleared">Cleared</span>
+                {% else %}
+                    <span class="status-pending">Pending</span>
+                {% endif %}
+            </td>
+
+            <td>
+                <a href="{% url 'edit_credit' credit.id %}" class="btn btn-edit">
+                    Edit
+                </a>
+
+                <a href="{% url 'delete_credit' credit.id %}" class="btn btn-delete">
+                    Delete
+                </a>
+            </td>
+
+        </tr>
+
+        {% empty %}
+
+        <tr>
+            <td colspan="8">No supplier credits found</td>
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+</div>
+
+</body>
+</html>
