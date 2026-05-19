@@ -57,4 +57,14 @@ urlpatterns = [
     path("deposit-schemes/add/", views.add_deposit, name="add_deposit"),
     path("deposit-schemes/edit/<int:pk>/", views.edit_deposit, name="edit_deposit"),
     path("deposit-schemes/delete/<int:pk>/", views.delete_deposit, name="delete_deposit"),
+
+    # reporting
+     # reports
+    path("sales-report/", views.sales_report, name="sales_report"),
+    path("stock-report/", views.stock_report, name="stock_report"),
+    path("profit-report/", views.profit_report, name="profit_report"),
+    path("deposit-report/", views.deposit_report, name="deposit_report"),
+    path("credit-report/", views.credit_report, name="credit_report"),
+    path("reports/", views.reports_home, name="reports_home"),
+
 ]

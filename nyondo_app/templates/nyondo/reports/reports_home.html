@@ -1,0 +1,48 @@
+{% extends "nyondo/base.html" %}
+
+{% block content %}
+
+<h2>Reports Center</h2>
+
+<div class="cards">
+
+    <a href="{% url 'sales_report' %}" class="card">Sales Report</a>
+
+    <a href="{% url 'stock_report' %}" class="card">Stock Report</a>
+
+    <a href="{% url 'profit_report' %}" class="card">Profit Report</a>
+
+    <a href="{% url 'deposit_report' %}" class="card">Deposit Report</a>
+
+    <a href="{% url 'credit_report' %}" class="card">Credit Report</a>
+
+</div>
+
+<style>
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:15px;
+    margin-top:20px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    text-align:center;
+    text-decoration:none;
+    color:black;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    font-weight:bold;
+}
+
+.card:hover{
+    background:#0b1f3a;
+    color:white;
+}
+
+</style>
+
+{% endblock %}

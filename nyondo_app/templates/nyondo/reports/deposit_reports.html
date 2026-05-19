@@ -1,0 +1,249 @@
+{% extends "nyondo/base.html" %}
+{% load humanize %}
+
+{% block content %}
+
+<div class="report-container">
+
+    <!-- header -->
+    <div class="report-header">
+
+        <div>
+            <h1>Deposit Report</h1>
+            <p>Customer deposit tracking</p>
+        </div>
+
+        <button onclick="window.print()" class="print-btn">
+            Print Report
+        </button>
+
+    </div>
+
+    <!-- summary -->
+    <div class="summary-cards">
+
+        <div class="card">
+            <h3>Total Deposited</h3>
+            <h2>UGX {{ total_deposits|floatformat:0|intcomma }}</h2>
+        </div>
+
+        <div class="card warning">
+            <h3>Total Expected</h3>
+            <h2>UGX {{ total_expected|floatformat:0|intcomma }}</h2>
+        </div>
+
+        <div class="card danger">
+            <h3>Remaining Balance</h3>
+            <h2>UGX {{ total_balance|floatformat:0|intcomma }}</h2>
+        </div>
+
+        <div class="card success">
+            <h3>Completed</h3>
+            <h2>{{ completed_count }}</h2>
+        </div>
+
+        <div class="card">
+            <h3>Pending</h3>
+            <h2>{{ pending_count }}</h2>
+        </div>
+
+    </div>
+
+    <!-- table -->
+    <div class="table-section">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>Deposited</th>
+                    <th>Expected</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for d in deposits %}
+
+                <tr>
+
+                    <td>{{ d.customer_name }}</td>
+
+                    <td>{{ d.product_name }}</td>
+
+                    <td>{{ d.quantity }}</td>
+
+                    <td>
+                        UGX {{ d.unit_price|floatformat:0|intcomma }}
+                    </td>
+
+                    <td>
+                        UGX {{ d.amount_deposited|floatformat:0|intcomma }}
+                    </td>
+
+                    <td>
+                        UGX
+                        {{ d.unit_price|floatformat:0|intcomma|add:""|floatformat:0 }}
+                    </td>
+
+                    <td>
+
+                        {% if d.amount_deposited >= d.unit_price|floatformat:0|add:"0" %}
+
+                            <span class="status success-status">Completed</span>
+
+                        {% else %}
+
+                            <span class="status warning-status">Pending</span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="7">No deposits available</td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<style>
+
+.report-container{
+    padding: 20px;
+}
+
+.report-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.report-header h1{
+    font-size: 30px;
+}
+
+.report-header p{
+    color: gray;
+    margin-top: 5px;
+}
+
+.print-btn{
+    background: black;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.summary-cards{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.card{
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.card h3{
+    color: gray;
+    margin-bottom: 10px;
+}
+
+.card h2{
+    font-size: 24px;
+}
+
+.warning{ border-left: 5px solid orange; }
+.success{ border-left: 5px solid green; }
+.danger{ border-left: 5px solid red; }
+
+.table-section{
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+table{
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table th{
+    background: #f5f5f5;
+    padding: 14px;
+    text-align: left;
+}
+
+table td{
+    padding: 14px;
+    border-bottom: 1px solid #eee;
+}
+
+.status{
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.success-status{
+    background: #d4edda;
+    color: #155724;
+}
+
+.warning-status{
+    background: #fff3cd;
+    color: #856404;
+}
+
+@media(max-width:768px){
+
+    .report-header{
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    table{
+        font-size: 14px;
+    }
+
+}
+
+@media print{
+    .print-btn{
+        display: none;
+    }
+    body{
+        background: white;
+    }
+}
+
+</style>
+
+{% endblock %}

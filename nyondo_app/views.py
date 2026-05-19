@@ -10,40 +10,145 @@ from .models import *
 from django.contrib.auth.models import User
 from django.utils import timezone   
 from .forms import StockForm, SupplierCreditForm, DepositSchemeForm
+from django.db.models.functions import TruncMonth
+
 
 
 
 # Create your views here.
 def register_view(request):
+
     if request.method == "POST":
+
         form = UserCreationForm(request.POST)
 
         if form.is_valid():
+
             form.save()
-            messages.success(request, "Account created successfully.")
-            return redirect("login")
+
+            messages.success(
+                request,
+                "Account created successfully."
+            )
+
+            return redirect("register")
 
     else:
+
         form = UserCreationForm()
 
-    return render(request, "accounts/register.html", {"form": form})
+    users = User.objects.all().order_by("-id")
 
+    context = {
+        "form": form,
+        "users": users,
+    }
+
+    return render(
+        request,
+        "accounts/register.html",
+        context
+    )
     
 def login_view(request):
+
     if request.method == "POST":
+
         username = request.POST.get("username")
         password = request.POST.get("password")
 
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(
+            request,
+            username=username,
+            password=password
+        )
 
         if user is not None:
+
             login(request, user)
-            return redirect("admin_dashboard")
+
+            # SAFE: define groups AFTER login
+            group_names = list(
+                user.groups.values_list("name", flat=True)
+            )
+
+            if user.is_superuser:
+                return redirect("admin_dashboard")
+
+            elif "Sales" in group_names:
+                return redirect("sales_dashboard")
+
+            elif "Stock" in group_names:
+                return redirect("stock_dashboard")
+
+            else:
+                messages.error(
+                    request,
+                    f"No role assigned. Groups found: {group_names}"
+                )
+                return redirect("login")
+
         else:
-            messages.error(request, "Invalid username or password")
+
+            messages.error(
+                request,
+                "Invalid username or password"
+            )
+
+            return redirect("login")
 
     return render(request, "accounts/login.html")
 
+
+
+def login_view(request):
+
+    if request.method == "POST":
+
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        user = authenticate(
+            request,
+            username=username,
+            password=password
+        )
+
+        if user is not None:
+
+            login(request, user)
+
+            # SAFE: define groups AFTER login
+            group_names = list(
+                user.groups.values_list("name", flat=True)
+            )
+
+            if user.is_superuser:
+                return redirect("admin_dashboard")
+
+            elif "Sales" in group_names:
+                return redirect("sales_dashboard")
+
+            elif "Stock" in group_names:
+                return redirect("stock_dashboard")
+
+            else:
+                messages.error(
+                    request,
+                    f"No role assigned. Groups found: {group_names}"
+                )
+                return redirect("login")
+
+        else:
+
+            messages.error(
+                request,
+                "Invalid username or password"
+            )
+
+            return redirect("login")
+
+    return render(request, "accounts/login.html")    
 
 def logout_view(request):
     logout(request)
@@ -53,25 +158,47 @@ def logout_view(request):
 
 #dashboard view 
 
+
 @login_required
 def admin_dashboard(request):
 
-    # =========================
-    # GET ALL SALES
-    # =========================
-    sales = Sales.objects.all()
+    sales = Sales.objects.select_related("product").all()
 
     # =========================
-    # TOTAL REVENUE
-    # Includes transport charges
+    # REVENUE (DB SAFE)
     # =========================
-    total_revenue = sum(
-        sale.final_total
-        for sale in sales
-    )
+    total_revenue = sales.aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                (F("quantity") * F("unit_price")) + 0,
+                output_field=DecimalField()
+            )
+        )
+    )["total"] or 0
 
     # =========================
-    # TOTAL STOCK VALUE
+    # PROFIT (DB SAFE - FIXED)
+    # =========================
+    total_profit = sales.aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                (F("unit_price") - F("product__buying_price")) * F("quantity"),
+                output_field=DecimalField()
+            )
+        )
+    )["total"] or 0
+
+    # =========================
+    # ORDERS + ITEMS
+    # =========================
+    total_orders = sales.count()
+
+    total_items_sold = sales.aggregate(
+        total=Sum("quantity")
+    )["total"] or 0
+
+    # =========================
+    # STOCK VALUE
     # =========================
     stock_value = Stock.objects.aggregate(
         total=Sum(
@@ -82,62 +209,91 @@ def admin_dashboard(request):
         )
     )["total"] or 0
 
+    total_products = Stock.objects.count()
+
+    low_stock = Stock.objects.filter(quantity__lte=10, quantity__gt=0).count()
+    out_of_stock = Stock.objects.filter(quantity=0).count()
+
     # =========================
-    # TOTAL CREDIT
+    # CREDIT
     # =========================
     total_credit = SupplierCredit.objects.aggregate(
         total=Sum("balance")
     )["total"] or 0
 
+    pending_credit = SupplierCredit.objects.filter(status="Pending").count()
+    cleared_credit = SupplierCredit.objects.filter(status="Cleared").count()
+
     # =========================
-    # TOTAL ITEMS
+    # DEPOSITS
     # =========================
-    total_items = Stock.objects.aggregate(
-        total=Sum("quantity")
+    total_deposits = DepositScheme.objects.aggregate(
+        total=Sum("amount_deposited")
     )["total"] or 0
 
-    # =========================
-    # TOTAL USERS
-    # =========================
-    total_users = User.objects.count()
+    pending_deposits = DepositScheme.objects.filter(
+        amount_deposited__lt=F("unit_price") * F("quantity")
+    ).count()
 
-    # =========================
-    # LOW STOCK
-    # =========================
-    low_stock = Stock.objects.filter(
-        quantity__lte=10
+    completed_deposits = DepositScheme.objects.filter(
+        amount_deposited__gte=F("unit_price") * F("quantity")
     ).count()
 
     # =========================
-    # OUT OF STOCK
+    # DELIVERY LOGIC
     # =========================
-    out_of_stock = Stock.objects.filter(
-        quantity=0
-    ).count()
+    free_deliveries = Sales.objects.filter(distance_km__lte=10).count()
+    charged_deliveries = Sales.objects.filter(distance_km__gt=10).count()
 
     # =========================
-    # CONTEXT
+    # RECENT SALES
     # =========================
+    recent_sales = sales.order_by("-sale_date")[:10]
+
+    # =========================
+    # TOP PRODUCTS
+    # =========================
+    top_products = sales.values(
+        "product__product_name"
+    ).annotate(
+        total_sold=Sum("quantity")
+    ).order_by("-total_sold")[:5]
+
+    # =========================
+    # PROFIT MARGIN
+    # =========================
+    profit_margin = (total_profit / total_revenue * 100) if total_revenue else 0
+
     context = {
         "total_revenue": total_revenue,
+        "total_profit": total_profit,
+        "profit_margin": round(profit_margin, 2),
+
+        "total_orders": total_orders,
+        "total_items_sold": total_items_sold,
+
         "stock_value": stock_value,
-        "total_credit": total_credit,
-        "total_items": total_items,
-        "total_users": total_users,
+        "total_products": total_products,
         "low_stock": low_stock,
         "out_of_stock": out_of_stock,
+
+        "total_credit": total_credit,
+        "pending_credit": pending_credit,
+        "cleared_credit": cleared_credit,
+
+        "total_deposits": total_deposits,
+        "pending_deposits": pending_deposits,
+        "completed_deposits": completed_deposits,
+
+        "free_deliveries": free_deliveries,
+        "charged_deliveries": charged_deliveries,
+
+        "recent_sales": recent_sales,
+        "top_products": top_products,
     }
 
-    # =========================
-    # RENDER PAGE
-    # =========================
-    return render(
-        request,
-        "nyondo/admin_dashboard.html",
-        context
-    )
+    return render(request, "nyondo/admin_dashboard.html", context)
 #stock dashboard view
-
 @login_required
 def stock_dashboard(request):
 
@@ -388,6 +544,8 @@ def delete_stock(request, stock_id):
         return redirect("stock_list")
 
     return render(request, "nyondo/delete_stock.html", {"stock": stock}) 
+
+
 
 #sales list view
 
@@ -782,6 +940,177 @@ def delete_deposit(request, pk):
         "nyondo/delete_deposit.html",
         {"deposit": deposit}
     )
+
+#=========REPORTS VIEW =============
+@login_required
+def sales_report(request):
+    sales = Sales.objects.select_related("product").order_by("-sale_date")
+
+    # Totals calculated in Python
+    total_revenue = sum((sale.quantity * sale.unit_price) + getattr(sale, "transport_charge", 0) for sale in sales)
+    total_profit = sum((sale.unit_price - sale.product.buying_price) * sale.quantity for sale in sales)
+    sales_count = sales.count()
+
+    context = {
+        "sales": sales,
+        "sales_count": sales_count,
+        "total_revenue": total_revenue,
+        "total_profit": total_profit,
+    }
+    return render(request, "nyondo/reports/sales_report.html", context)
+
+
+# === STOCK REPORT ===
+@login_required
+def stock_report(request):
+    stocks = Stock.objects.annotate(
+        total_value=ExpressionWrapper(
+            F("quantity") * F("selling_price"),
+            output_field=DecimalField()
+        )
+    ).order_by("product_name")
+
+    total_stock_value = stocks.aggregate(
+        total=Sum("total_value")
+    )["total"] or 0
+
+    total_products = stocks.count()
+    low_stock = stocks.filter(quantity__lte=10, quantity__gt=0).count()
+    out_of_stock = stocks.filter(quantity=0).count()
+
+    context = {
+        "stocks": stocks,
+        "total_stock_value": total_stock_value,
+        "total_products": total_products,
+        "low_stock": low_stock,
+        "out_of_stock": out_of_stock,
+    }
+    return render(request, "nyondo/reports/stock_reports.html", context)
+
+
+# === PROFIT REPORT ===
+@login_required
+def profit_report(request):
+    sales = Sales.objects.select_related("product").order_by("-sale_date")
+
+    total_revenue = sum((sale.quantity * sale.unit_price) + getattr(sale, "transport_charge", 0) for sale in sales)
+    total_profit = sum((sale.unit_price - sale.product.buying_price) * sale.quantity for sale in sales)
+    total_orders = sales.count()
+    profit_margin = (total_profit / total_revenue * 100) if total_revenue > 0 else 0
+
+    # Top products by profit
+    top_products = (
+        Sales.objects.values("product__product_name")
+        .annotate(
+            total_profit=Sum(
+                ExpressionWrapper(
+                    (F("unit_price") - F("product__buying_price")) * F("quantity"),
+                    output_field=DecimalField()
+                )
+            ),
+            total_sales=Sum(
+                ExpressionWrapper(
+                    F("quantity") * F("unit_price"),
+                    output_field=DecimalField()
+                )
+            ),
+            total_quantity=Sum("quantity")
+        )
+        .order_by("-total_profit")[:10]
+    )
+
+    # Monthly profit
+    monthly_profit = (
+        Sales.objects.annotate(month=TruncMonth("sale_date"))
+        .values("month")
+        .annotate(
+            revenue=Sum(
+                ExpressionWrapper(
+                    F("quantity") * F("unit_price"),
+                    output_field=DecimalField()
+                )
+            ),
+            profit=Sum(
+                ExpressionWrapper(
+                    (F("unit_price") - F("product__buying_price")) * F("quantity"),
+                    output_field=DecimalField()
+                )
+            ),
+            orders=Count("id")
+        )
+        .order_by("month")
+    )
+
+    context = {
+        "sales": sales,
+        "total_revenue": total_revenue,
+        "total_profit": total_profit,
+        "total_orders": total_orders,
+        "profit_margin": round(profit_margin, 2),
+        "top_products": top_products,
+        "monthly_profit": monthly_profit,
+    }
+    return render(request, "nyondo/reports/profit_reports.html", context)
+
+
+# === SUPPLIER CREDIT REPORT ===
+@login_required
+def credit_report(request):
+    credits = SupplierCredit.objects.all().order_by("-id")
+
+    total_credit = credits.aggregate(total=Sum("balance"))["total"] or 0
+    pending_credits = credits.filter(status="Pending")
+    cleared_credits = credits.filter(status="Cleared")
+
+    pending_total = pending_credits.aggregate(total=Sum("balance"))["total"] or 0
+    cleared_total = cleared_credits.aggregate(total=Sum("balance"))["total"] or 0
+
+    context = {
+        "credits": credits,
+        "total_credit": total_credit,
+        "pending_credits": pending_credits,
+        "cleared_credits": cleared_credits,
+        "pending_total": pending_total,
+        "cleared_total": cleared_total,
+    }
+    return render(request, "nyondo/reports/credit_reports.html", context)
+
+
+# === DEPOSIT REPORT ===
+@login_required
+def deposit_report(request):
+    deposits = DepositScheme.objects.all().order_by("-id")
+
+    total_deposits = deposits.aggregate(total=Sum("amount_deposited"))["total"] or 0
+    total_expected = deposits.aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                F("unit_price") * F("quantity"),
+                output_field=DecimalField()
+            )
+        )
+    )["total"] or 0
+
+    total_balance = total_expected - total_deposits
+
+    completed = deposits.filter(amount_deposited__gte=F("unit_price") * F("quantity"))
+    pending = deposits.filter(amount_deposited__lt=F("unit_price") * F("quantity"))
+
+    context = {
+        "deposits": deposits,
+        "total_deposits": total_deposits,
+        "total_expected": total_expected,
+        "total_balance": total_balance,
+        "completed_count": completed.count(),
+        "pending_count": pending.count(),
+    }
+    return render(request, "nyondo/reports/deposit_reports.html", context)
+
+
+# === REPORTS HOME ===
+@login_required
+def reports_home(request):
+    return render(request, "nyondo/reports/reports_home.html")
 
 
 #         # AUDIT LOG

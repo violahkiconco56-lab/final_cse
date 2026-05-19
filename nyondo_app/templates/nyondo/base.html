@@ -4,6 +4,7 @@
     <title>Nyondo System</title>
 
     <style>
+
         body {
             margin: 0;
             font-family: Arial, sans-serif;
@@ -19,6 +20,7 @@
             color: white;
             position: fixed;
             padding-top: 20px;
+            overflow-y: auto;
         }
 
         .sidebar h2 {
@@ -32,6 +34,7 @@
             color: white;
             padding: 12px 20px;
             text-decoration: none;
+            transition: 0.2s;
         }
 
         .sidebar a:hover {
@@ -48,7 +51,7 @@
         /* TOPBAR */
         .topbar {
             background: white;
-            padding: 15px;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -57,39 +60,76 @@
         .container {
             padding: 20px;
         }
+
+        /* SECTION HEADERS */
+        .menu-title {
+            padding: 10px 20px;
+            font-size: 12px;
+            color: #aaa;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
     </style>
+
 </head>
 
 <body>
 
 <!-- SIDEBAR -->
 <div class="sidebar">
+
     <h2>NYONDO</h2>
 
+    {% with group=user.groups.first %}
+
+    <!-- ADMIN -->
     {% if user.is_superuser %}
-        <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+
+        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+
+        <div class="menu-title">Operations</div>
         <a href="{% url 'stock_dashboard' %}">Stock</a>
         <a href="{% url 'sales_dashboard' %}">Sales</a>
         <a href="{% url 'deposit_list' %}">Deposits</a>
         <a href="{% url 'credit_list' %}">Supplier Credit</a>
 
-    {% elif user.groups.first.name == "Storekeeper" %}
+        <div class="menu-title">Reports</div>
+        <a href="{% url 'reports_home' %}">Reports Center</a>
+
+    <!-- STOREKEEPER -->
+    {% elif group and group.name == "Stock" %}
+
         <a href="{% url 'stock_dashboard' %}">Stock</a>
         <a href="{% url 'credit_list' %}">Supplier Credit</a>
 
-    {% elif user.groups.first.name == "Sales" %}
+        <div class="menu-title">Reports</div>
+        <a href="{% url 'stock_report' %}">Stock Report</a>
+
+    <!-- SALES -->
+    {% elif group and group.name == "Sales" %}
+
         <a href="{% url 'sales_list' %}">Sales</a>
         <a href="{% url 'add_sale' %}">Add Sale</a>
+
+        <div class="menu-title">Reports</div>
+        <a href="{% url 'sales_report' %}">Sales Report</a>
+
     {% endif %}
 
+    <!-- COMMON -->
+    <div class="menu-title">Account</div>
     <a href="{% url 'logout' %}">Logout</a>
+
+    {% endwith %}
+
 </div>
 
 <!-- MAIN CONTENT -->
 <div class="main">
 
     <div class="topbar">
-        <div><b>Dashboard System</b></div>
+        <div><b>Nyondo Management System</b></div>
         <div>{{ user.username }}</div>
     </div>
 
