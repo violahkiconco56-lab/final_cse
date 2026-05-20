@@ -5,69 +5,184 @@
 
     <style>
 
+        :root {
+            --bg: #f3eef9;
+            --surface: #efe5f5;
+            --surface-soft: #f7f1fb;
+            --panel: #e8dcf3;
+            --sidebar: #5d4492;
+            --sidebar-hover: #7f66bf;
+            --text: #2f1f45;
+            --text-muted: #6d5d88;
+            --border: rgba(109, 89, 138, 0.22);
+            --button: #7550b1;
+            --button-hover: #5d3d94;
+            --button-text: #f8f5ff;
+        }
+
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
+            font-family: "Segoe UI", Arial, sans-serif;
             display: flex;
-            background: #f4f6f9;
+            background: var(--bg);
+            color: var(--text);
         }
 
         /* SIDEBAR */
         .sidebar {
-            width: 240px;
+            width: 260px;
             height: 100vh;
-            background: #0b1f3a;
-            color: white;
+            background: var(--sidebar);
+            color: var(--button-text);
             position: fixed;
-            padding-top: 20px;
+            padding-top: 24px;
             overflow-y: auto;
+            box-shadow: 2px 0 18px rgba(79, 53, 123, 0.2);
         }
 
         .sidebar h2 {
             text-align: center;
-            color: #ffd700;
-            margin-bottom: 20px;
+            color: #f4e9ff;
+            margin-bottom: 22px;
+            letter-spacing: 0.08em;
         }
 
         .sidebar a {
             display: block;
-            color: white;
-            padding: 12px 20px;
+            color: var(--button-text);
+            padding: 14px 24px;
             text-decoration: none;
-            transition: 0.2s;
+            transition: background 0.2s ease, color 0.2s ease;
+            font-size: 0.95rem;
+            border-left: 4px solid transparent;
         }
 
-        .sidebar a:hover {
-            background: #ffd700;
-            color: #0b1f3a;
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: var(--sidebar-hover);
+            color: var(--button-text);
+            border-left-color: rgba(255,255,255,0.35);
+        }
+
+        .sidebar .menu-title {
+            padding: 12px 24px 8px;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.75);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 18px;
         }
 
         /* MAIN AREA */
         .main {
-            margin-left: 240px;
-            width: 100%;
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            min-height: 100vh;
         }
 
         /* TOPBAR */
         .topbar {
-            background: white;
-            padding: 15px 20px;
+            background: var(--surface);
+            padding: 18px 26px;
             display: flex;
             justify-content: space-between;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            align-items: center;
+            box-shadow: 0 1px 14px rgba(74, 43, 123, 0.08);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar div {
+            color: var(--text);
+            font-weight: 600;
         }
 
         .container {
-            padding: 20px;
+            padding: 24px 30px;
         }
 
-        /* SECTION HEADERS */
-        .menu-title {
-            padding: 10px 20px;
-            font-size: 12px;
-            color: #aaa;
-            text-transform: uppercase;
-            margin-top: 10px;
+        .card,
+        .section-box,
+        .form-container,
+        .message,
+        .panel {
+            background: var(--surface-soft);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 8px 28px rgba(88, 64, 138, 0.06);
+        }
+
+        h1, h2, h3, h4, h5 {
+            color: var(--text);
+        }
+
+        p, label, span, td, th, a, input, select, textarea, button {
+            color: var(--text-muted);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 18px;
+        }
+
+        th, td {
+            padding: 14px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: rgba(127, 102, 191, 0.14);
+            color: var(--text);
+        }
+
+        button,
+        .btn,
+        input[type="submit"],
+        .btn-primary,
+        .btn-save {
+            background: var(--button);
+            color: var(--button-text);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.25s ease;
+        }
+
+        button:hover,
+        .btn:hover,
+        .btn-primary:hover,
+        .btn-save:hover,
+        input[type="submit"]:hover {
+            background: var(--button-hover);
+        }
+
+        .warning {
+            margin-top: 24px;
+            padding: 18px 22px;
+            border-left: 4px solid rgba(117, 80, 177, 0.8);
+            background: #efebf7;
+            color: var(--text);
+            border-radius: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .main {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
 
     </style>
@@ -111,6 +226,14 @@
 
         <a href="{% url 'sales_list' %}">Sales</a>
         <a href="{% url 'add_sale' %}">Add Sale</a>
+        <a href="{% url 'receipts_list' %}">Receipts</a>
+        <a href="{% url 'credit_list' %}">Supplier Credit</a>
+        <a href="{% url 'sales_list' %}">Sales List</a>
+        <a href="{% url 'add_sale' %}">New Sale</a>
+        <a href="{% url 'sales_report' %}">Sales Reports</a>
+        <a href="{% url 'receipts_list' %}">Receipts</a
+
+
 
         <div class="menu-title">Reports</div>
         <a href="{% url 'sales_report' %}">Sales Report</a>

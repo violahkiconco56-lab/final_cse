@@ -43,13 +43,16 @@ urlpatterns = [
     #receipt view
     path("receipts/", views.receipts_list, name="receipts_list"),
     path("receipts/<int:sale_id>/", views.sale_receipt, name="sale_receipt"),
+    path("receipts/detail/<int:sale_id>/", views.sale_receipt, name="receipt_detail"),
     path("receipts/print/<int:sale_id>/", views.receipt_print, name="receipt_print"),
+    path("deposit-receipts/<int:deposit_id>/", views.deposit_receipt, name="deposit_receipt"),
+    path("deposit-receipts/print/<int:deposit_id>/", views.deposit_receipt_print, name="deposit_receipt_print"),
 
     # supplier credit management
     path("supplier-credits/", views.credit_list, name="credit_list"), 
     path("supplier-credits/add/", views.add_credit, name="add_credit"),
-    path("supplier-credits/edit/<int:credit_id>/", views.edit_credit, name="edit_credit"),
-    path("supplier-credits/delete/<int:credit_id>/", views.delete_credit, name="delete_credit"),
+    path("supplier-credits/edit/<int:pk>/", views.edit_credit, name="edit_credit"),
+    path("supplier-credits/delete/<int:pk>/", views.delete_credit, name="delete_credit"),
     
 
     # deposit scheme management
@@ -65,6 +68,7 @@ urlpatterns = [
     path("profit-report/", views.profit_report, name="profit_report"),
     path("deposit-report/", views.deposit_report, name="deposit_report"),
     path("credit-report/", views.credit_report, name="credit_report"),
+    path("audit-log/", views.audit_log, name="audit_log"),
     path("reports/", views.reports_home, name="reports_home"),
 
 ]

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Receipt - {{ receipt.receipt_no }}</title>
+    <title>Deposit Receipt - {{ deposit.customer_name }}</title>
 
     <style>
         body{
@@ -69,14 +69,15 @@
             font-weight: bold;
         }
 
-        .paid{ color: green; }
-        .pending{ color: orange; }
+        .cleared{ color: green; }
+        .partial{ color: orange; }
+        .pending{ color: #555; }
 
         .btn{
             display: inline-block;
             margin-top: 20px;
             padding: 10px 15px;
-            background: #007bff;
+            background: #5a4b8a;
             color: white;
             text-decoration: none;
             border-radius: 5px;
@@ -85,7 +86,6 @@
         .btn-print{
             background: #28a745;
         }
-
     </style>
 </head>
 
@@ -93,52 +93,51 @@
 
 <div class="receipt-box">
 
-    <!-- HEADER -->
     <div class="header">
         <h2>NYONDO HARDWARE LTD</h2>
-        <p>Official Sales Receipt</p>
-            <p><strong>Receipt No:</strong> {{ receipt.receipt_no }}</p>
-    <div class="info">
-        <p><strong>Customer:</strong> {{ receipt.customer_name }}</p>
-        <p><strong>Phone:</strong> {{ receipt.customer_phone }}</p>
-        <p><strong>Date:</strong> {{ receipt.sale_date }}</p>
+        <p>Official Deposit Receipt</p>
+        <p><strong>Customer:</strong> {{ deposit.customer_name }}</p>
+        <p><strong>Date:</strong> {{ deposit.registration_date }}</p>
     </div>
 
-    <!-- PRODUCT TABLE -->
+    <div class="info">
+        <p><strong>NIN:</strong> {{ deposit.nin_number }}</p>
+        <p><strong>Phone:</strong> {{ deposit.phone_number }}</p>
+    </div>
+
     <table>
         <tr>
             <th>Product</th>
             <th>Qty</th>
             <th>Unit Price</th>
-            <th>Total</th>
+            <th>Total Cost</th>
         </tr>
-
         <tr>
-            <td>{{ receipt.product.product_name }}</td>
-            <td>{{ receipt.quantity }}</td>
-            <td>{{ receipt.unit_price }}</td>
-            <td>{{ receipt.total_amount }}</td>
+            <td>{{ deposit.product_name }}</td>
+            <td>{{ deposit.quantity }}</td>
+            <td>{{ deposit.unit_price }}</td>
+            <td>{{ deposit.total_cost }}</td>
         </tr>
     </table>
 
-    <!-- FINANCIAL BREAKDOWN -->
     <div class="total">
-        <h3>Transport: {{ receipt.transport_charge }}</h3>
-        <h3>Final Total: {{ receipt.final_total }}</h3>
-
-        <h3 class="status">
-            Status:
-            {% if receipt.payment_status == "Paid" %}
-                <span class="paid">PAID</span>
-            {% else %}
-                <span class="pending">PENDING</span>
-            {% endif %}
-        </h3>
+        <h3>Amount Deposited: {{ deposit.amount_deposited }}</h3>
+        <h3>Balance: {{ deposit.balance }}</h3>
     </div>
 
-    <!-- BUTTONS -->
-    <a href="{% url 'receipts_list' %}" class="btn">Back</a>
-    <a href="{% url 'receipt_print' receipt.id %}" class="btn btn-print">Print Receipt</a>
+    <h3 class="status">
+        Status:
+        {% if deposit.status == "Cleared" %}
+            <span class="cleared">CLEARED</span>
+        {% elif deposit.status == "Partial" %}
+            <span class="partial">PARTIAL</span>
+        {% else %}
+            <span class="pending">PENDING</span>
+        {% endif %}
+    </h3>
+
+    <a href="{% url 'deposit_list' %}" class="btn">Back to Deposits</a>
+    <a href="{% url 'deposit_receipt_print' deposit.id %}" class="btn btn-print">Print Receipt</a>
 
 </div>
 

@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Print Receipt</title>
+    <title>Print Deposit Receipt</title>
 
     <style>
-
         body{
             font-family: Arial, sans-serif;
             background: white;
@@ -44,7 +43,6 @@
             font-weight: bold;
         }
 
-        /* PRINT RULE */
         @media print {
             .no-print {
                 display: none;
@@ -65,7 +63,6 @@
             text-decoration: none;
             border-radius: 5px;
         }
-
     </style>
 </head>
 
@@ -75,26 +72,28 @@
 
     <div class="center">
         <h2>NYONDO LTD</h2>
-        <small>Official Receipt</small>
+        <small>Deposit Receipt</small>
         <hr>
     </div>
 
-    <p><strong>Receipt:</strong> {{ receipt.receipt_no }}</p>
-    <p><strong>Customer:</strong> {{ receipt.customer_name }}</p>
-    <p><strong>Phone:</strong> {{ receipt.customer_phone }}</p>
-    <p><strong>Date:</strong> {{ receipt.sale_date }}</p>
+    <p><strong>Customer:</strong> {{ deposit.customer_name }}</p>
+    <p><strong>Phone:</strong> {{ deposit.phone_number }}</p>
+    <p><strong>Date:</strong> {{ deposit.registration_date }}</p>
 
     <hr>
 
     <table>
         <tr>
-            <td>{{ receipt.product.product_name }}</td>
+            <td>Product</td>
+            <td>{{ deposit.product_name }}</td>
         </tr>
         <tr>
-            <td>Qty: {{ receipt.quantity }}</td>
+            <td>Qty</td>
+            <td>{{ deposit.quantity }}</td>
         </tr>
         <tr>
-            <td>Unit: {{ receipt.unit_price }}</td>
+            <td>Unit</td>
+            <td>{{ deposit.unit_price }}</td>
         </tr>
     </table>
 
@@ -102,26 +101,25 @@
 
     <table>
         <tr>
-            <td>Total</td>
-            <td>{{ receipt.total_amount }}</td>
+            <td>Total Cost</td>
+            <td>{{ deposit.total_cost }}</td>
         </tr>
         <tr>
-            <td>Transport</td>
-            <td>{{ receipt.transport_charge }}</td>
+            <td>Deposited</td>
+            <td>{{ deposit.amount_deposited }}</td>
         </tr>
         <tr class="total">
-            <td>Final</td>
-            <td>{{ receipt.final_total }}</td>
+            <td>Balance</td>
+            <td>{{ deposit.balance }}</td>
         </tr>
     </table>
 
     <hr>
 
     <p class="center">
-        Status: {{ receipt.payment_status }}
+        Status: {{ deposit.status }}
     </p>
 
-    <!-- PRINT BUTTON -->
     <a href="#" onclick="window.print()" class="btn no-print">
         Print Receipt
     </a>

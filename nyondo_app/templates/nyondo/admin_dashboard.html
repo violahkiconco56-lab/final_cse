@@ -49,6 +49,12 @@
             <h2>{{ total_products }}</h2>
         </div>
 
+        <div class="card audit-card">
+            <h3>Audit Entries</h3>
+            <h2>{{ audit_count }}</h2>
+            <p>{{ recent_audits.count }} recent actions</p>
+        </div>
+
         <div class="card">
             <h3>Total Credit</h3>
             <h2>UGX {{ total_credit|floatformat:0|intcomma }}</h2>
@@ -132,6 +138,44 @@
 
             </tbody>
 
+        </table>
+
+    </div>
+
+    <!-- audit activity -->
+    <div class="table-section">
+
+        <div class="table-header">
+            <h2>Recent Audit Activity</h2>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Model</th>
+                    <th>Object ID</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_audits %}
+                <tr>
+                    <td>{{ log.user.username|default:"System" }}</td>
+                    <td>{{ log.get_action_display }}</td>
+                    <td>{{ log.model_name|default:"N/A" }}</td>
+                    <td>{{ log.object_id|default:"-" }}</td>
+                    <td>{{ log.description }}</td>
+                    <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">No audit activity available</td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
 
     </div>

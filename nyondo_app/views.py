@@ -1,16 +1,39 @@
-from urllib import request
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.forms import UserCreationForm
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib import messages
 from django.db.models import DecimalField, ExpressionWrapper, Sum, F, Q, Count
-from .models import *
-from django.contrib.auth.models import User
-from django.utils import timezone   
-from .forms import StockForm, SupplierCreditForm, DepositSchemeForm
+
+
+def log_audit(user, action, description, model_name=None, object_id=None):
+    AuditLog.objects.create(
+        user=user,
+        action=action,
+        model_name=model_name,
+        object_id=str(object_id) if object_id is not None else None,
+        description=description,
+    )
+
+
+def get_low_stock_notification():
+    low_items = Stock.low_stock_items()
+    count = low_items.count()
+    return {
+        "low_stock_alert_items": low_items,
+        "low_stock_alert_count": count,
+        "low_stock_alert_message": (
+            f"{count} product{'s' if count != 1 else ''} are at or below reorder level"
+            if count else "All stock levels are healthy"
+        ),
+    }
+from django.contrib.auth.models import User, Group
+from django.utils import timezone
 from django.db.models.functions import TruncMonth
+from django.db import transaction
+from .models import Stock, Sales, SupplierCredit, DepositScheme, Supplier, AuditLog
+from .forms import StockForm, SaleForm, SupplierCreditForm, DepositSchemeForm, CustomUserCreationForm
+
 
 
 
@@ -20,11 +43,18 @@ def register_view(request):
 
     if request.method == "POST":
 
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
 
         if form.is_valid():
 
-            form.save()
+            new_user = form.save()
+            log_audit(
+                new_user,
+                "CREATE",
+                f"Registered user {new_user.username}",
+                model_name="User",
+                object_id=new_user.pk,
+            )
 
             messages.success(
                 request,
@@ -35,7 +65,7 @@ def register_view(request):
 
     else:
 
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
 
     users = User.objects.all().order_by("-id")
 
@@ -50,6 +80,7 @@ def register_view(request):
         context
     )
     
+@ensure_csrf_cookie
 def login_view(request):
 
     if request.method == "POST":
@@ -66,70 +97,27 @@ def login_view(request):
         if user is not None:
 
             login(request, user)
+            log_audit(
+                user,
+                "LOGIN",
+                f"User {user.username} logged in",
+                model_name="User",
+                object_id=user.pk,
+            )
 
             # SAFE: define groups AFTER login
             group_names = list(
                 user.groups.values_list("name", flat=True)
             )
+            normalized_groups = [name.strip().lower() for name in group_names]
 
             if user.is_superuser:
                 return redirect("admin_dashboard")
 
-            elif "Sales" in group_names:
+            elif "sales" in normalized_groups:
                 return redirect("sales_dashboard")
 
-            elif "Stock" in group_names:
-                return redirect("stock_dashboard")
-
-            else:
-                messages.error(
-                    request,
-                    f"No role assigned. Groups found: {group_names}"
-                )
-                return redirect("login")
-
-        else:
-
-            messages.error(
-                request,
-                "Invalid username or password"
-            )
-
-            return redirect("login")
-
-    return render(request, "accounts/login.html")
-
-
-
-def login_view(request):
-
-    if request.method == "POST":
-
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-
-        user = authenticate(
-            request,
-            username=username,
-            password=password
-        )
-
-        if user is not None:
-
-            login(request, user)
-
-            # SAFE: define groups AFTER login
-            group_names = list(
-                user.groups.values_list("name", flat=True)
-            )
-
-            if user.is_superuser:
-                return redirect("admin_dashboard")
-
-            elif "Sales" in group_names:
-                return redirect("sales_dashboard")
-
-            elif "Stock" in group_names:
+            elif "stock" in normalized_groups:
                 return redirect("stock_dashboard")
 
             else:
@@ -151,34 +139,43 @@ def login_view(request):
     return render(request, "accounts/login.html")    
 
 def logout_view(request):
+    if request.user.is_authenticated:
+        log_audit(
+            request.user,
+            "LOGOUT",
+            f"User {request.user.username} logged out",
+            model_name="User",
+            object_id=request.user.pk,
+        )
+
     logout(request)
     messages.success(request, "Logged out successfully.")
     return redirect("login")
 
 
-#dashboard view 
+# dashboard view
 
 
 @login_required
 def admin_dashboard(request):
 
+    # allow only admin users
+    if not request.user.is_superuser:
+        return redirect("login")
+
     sales = Sales.objects.select_related("product").all()
 
-    # =========================
-    # REVENUE (DB SAFE)
-    # =========================
+    # revenue
     total_revenue = sales.aggregate(
         total=Sum(
             ExpressionWrapper(
-                (F("quantity") * F("unit_price")) + 0,
+                F("quantity") * F("unit_price"),
                 output_field=DecimalField()
             )
         )
     )["total"] or 0
 
-    # =========================
-    # PROFIT (DB SAFE - FIXED)
-    # =========================
+    # profit
     total_profit = sales.aggregate(
         total=Sum(
             ExpressionWrapper(
@@ -188,18 +185,14 @@ def admin_dashboard(request):
         )
     )["total"] or 0
 
-    # =========================
-    # ORDERS + ITEMS
-    # =========================
+    # totals
     total_orders = sales.count()
 
     total_items_sold = sales.aggregate(
         total=Sum("quantity")
     )["total"] or 0
 
-    # =========================
-    # STOCK VALUE
-    # =========================
+    # stock value
     stock_value = Stock.objects.aggregate(
         total=Sum(
             ExpressionWrapper(
@@ -214,9 +207,11 @@ def admin_dashboard(request):
     low_stock = Stock.objects.filter(quantity__lte=10, quantity__gt=0).count()
     out_of_stock = Stock.objects.filter(quantity=0).count()
 
-    # =========================
-    # CREDIT
-    # =========================
+    low_stock_alert = get_low_stock_notification()
+    if low_stock_alert["low_stock_alert_count"]:
+        messages.warning(request, low_stock_alert["low_stock_alert_message"])
+
+    # credit
     total_credit = SupplierCredit.objects.aggregate(
         total=Sum("balance")
     )["total"] or 0
@@ -224,9 +219,7 @@ def admin_dashboard(request):
     pending_credit = SupplierCredit.objects.filter(status="Pending").count()
     cleared_credit = SupplierCredit.objects.filter(status="Cleared").count()
 
-    # =========================
-    # DEPOSITS
-    # =========================
+    # deposits
     total_deposits = DepositScheme.objects.aggregate(
         total=Sum("amount_deposited")
     )["total"] or 0
@@ -239,32 +232,28 @@ def admin_dashboard(request):
         amount_deposited__gte=F("unit_price") * F("quantity")
     ).count()
 
-    # =========================
-    # DELIVERY LOGIC
-    # =========================
+    # delivery
     free_deliveries = Sales.objects.filter(distance_km__lte=10).count()
     charged_deliveries = Sales.objects.filter(distance_km__gt=10).count()
 
-    # =========================
-    # RECENT SALES
-    # =========================
+    # recent sales
     recent_sales = sales.order_by("-sale_date")[:10]
 
-    # =========================
-    # TOP PRODUCTS
-    # =========================
+    # top products
     top_products = sales.values(
         "product__product_name"
     ).annotate(
         total_sold=Sum("quantity")
     ).order_by("-total_sold")[:5]
 
-    # =========================
-    # PROFIT MARGIN
-    # =========================
+    # audit
+    audit_count = AuditLog.objects.count()
+    recent_audits = AuditLog.objects.select_related("user").order_by("-timestamp")[:5]
+
+    # profit margin
     profit_margin = (total_profit / total_revenue * 100) if total_revenue else 0
 
-    context = {
+    return render(request, "nyondo/admin_dashboard.html", {
         "total_revenue": total_revenue,
         "total_profit": total_profit,
         "profit_margin": round(profit_margin, 2),
@@ -276,6 +265,9 @@ def admin_dashboard(request):
         "total_products": total_products,
         "low_stock": low_stock,
         "out_of_stock": out_of_stock,
+        "low_stock_alert_items": low_stock_alert["low_stock_alert_items"],
+        "low_stock_alert_count": low_stock_alert["low_stock_alert_count"],
+        "low_stock_alert_message": low_stock_alert["low_stock_alert_message"],
 
         "total_credit": total_credit,
         "pending_credit": pending_credit,
@@ -288,12 +280,15 @@ def admin_dashboard(request):
         "free_deliveries": free_deliveries,
         "charged_deliveries": charged_deliveries,
 
+        "audit_count": audit_count,
+        "recent_audits": recent_audits,
+
         "recent_sales": recent_sales,
         "top_products": top_products,
-    }
+    })
 
-    return render(request, "nyondo/admin_dashboard.html", context)
-#stock dashboard view
+
+# stock dashboard view
 @login_required
 def stock_dashboard(request):
 
@@ -318,6 +313,7 @@ def stock_dashboard(request):
 
     # Out of stock items
     out_of_stock = Stock.objects.filter(quantity=0).count()
+    low_stock_alert = get_low_stock_notification()
 
     # Future-ready profit calculation (no sales yet)
     total_profit = Stock.objects.aggregate(
@@ -340,81 +336,69 @@ def stock_dashboard(request):
         "low_stock": low_stock,
 
         "out_of_stock": out_of_stock,
+        "low_stock_alert_items": low_stock_alert["low_stock_alert_items"],
+        "low_stock_alert_count": low_stock_alert["low_stock_alert_count"],
+        "low_stock_alert_message": low_stock_alert["low_stock_alert_message"],
 
         "total_profit": total_profit,
     }
 
     return render(request, "nyondo/stock_dashboard.html", context)
 
-#sales dashboard view
+# sales dashboard view
 
 @login_required
 def sales_dashboard(request):
 
     # ================= BASIC KPIs =================
-    total_sales = Sales.objects.count()
+    sales = Sales.objects.select_related("product").all()
 
-    total_revenue = Sales.objects.aggregate(
+    total_sales = sales.count()
+    total_revenue = sales.aggregate(
         total=Sum("quantity")
     )["total"] or 0
+    total_profit = sum(sale.profit for sale in sales)
 
-    total_profit = sum(
-        sale.profit for sale in Sales.objects.select_related("product")
+    total_customers = Sales.objects.values("customer_phone").distinct().count()
+    transport_charges = sum(sale.transport_charge for sale in sales)
+    pending_payments = sum(
+        sale.final_total for sale in sales.filter(payment_status="Pending")
     )
-
-    # ================= PAYMENT STATUS =================
-    paid_sales = Sales.objects.filter(payment_status="Paid").count()
-    pending_sales = Sales.objects.filter(payment_status="Pending").count()
 
     # ================= TODAY SALES =================
     today = timezone.now().date()
-
-    today_sales = Sales.objects.filter(
-        sale_date__date=today
-    ).count()
-
+    today_sales = sales.filter(sale_date__date=today).count()
     today_revenue = sum(
-        sale.final_total for sale in Sales.objects.filter(
-            sale_date__date=today
-        )
+        sale.final_total for sale in sales.filter(sale_date__date=today)
     )
 
     # ================= TOP PRODUCTS =================
     top_products = (
-        Sales.objects.values("product__product_name")
-        .annotate(
-            total_qty=Sum("quantity")
-        )
-        .order_by("-total_qty")[:5]
+        Sales.objects.values(product_name=F("product__product_name"))
+        .annotate(units_sold=Sum("quantity"))
+        .order_by("-units_sold")[:5]
     )
 
-    # ================= LOW STOCK ALERT =================
+    recent_sales = sales.order_by("-sale_date")[:10]
     low_stock = Stock.objects.filter(quantity__lte=10)
 
-    # ================= CONTEXT =================
     context = {
-
-        # KPIs
         "total_sales": total_sales,
         "total_revenue": total_revenue,
         "total_profit": total_profit,
-
-        # Payments
-        "paid_sales": paid_sales,
-        "pending_sales": pending_sales,
-
-        # Today
+        "total_customers": total_customers,
+        "transport_charges": transport_charges,
+        "pending_payments": pending_payments,
         "today_sales": today_sales,
         "today_revenue": today_revenue,
-
-        # Analytics
+        "recent_sales": recent_sales,
         "top_products": top_products,
         "low_stock": low_stock,
     }
 
     return render(request, "nyondo/sales_dashboard.html", context)
 
-#  STOCK LIST SECTION
+# STOCK LIST SECTION
 @login_required
 def stock_list(request):
 
@@ -455,7 +439,7 @@ def stock_list(request):
     )
 
 
-# ================= ADD STOCK =================
+# ADD STOCK
 @login_required
 def add_stock(request):
 
@@ -473,6 +457,13 @@ def add_stock(request):
 
             # Save stock to database
             stock = form.save()
+            log_audit(
+                request.user,
+                "STOCK",
+                f"Added stock {stock.product_name} ({stock.quantity})",
+                model_name="Stock",
+                object_id=stock.pk,
+            )
 
             # Success message
             messages.success(
@@ -490,7 +481,7 @@ def add_stock(request):
         {"form": form}
     )
 
-# ================= EDIT STOCK =================
+# EDIT STOCK
 @login_required
 def edit_stock(request, stock_id):
 
@@ -511,6 +502,13 @@ def edit_stock(request, stock_id):
 
             # Save updates
             stock = form.save()
+            log_audit(
+                request.user,
+                "STOCK",
+                f"Updated stock {stock.product_name} ({stock.quantity})",
+                model_name="Stock",
+                object_id=stock.pk,
+            )
 
             # Success message
             messages.success(
@@ -527,7 +525,7 @@ def edit_stock(request, stock_id):
         {"form": form, "stock": stock}
     )
 
-# ================= DELETE STOCK =================
+# DELETE STOCK
 
 @login_required
 def delete_stock(request, stock_id):
@@ -537,6 +535,13 @@ def delete_stock(request, stock_id):
     if request.method == "POST":
 
         name = stock.product_name
+        log_audit(
+            request.user,
+            "DELETE",
+            f"Deleted stock {name}",
+            model_name="Stock",
+            object_id=stock.pk,
+        )
         stock.delete()
 
         messages.success(request, f"{name} deleted successfully")
@@ -549,7 +554,7 @@ def delete_stock(request, stock_id):
 
 #sales list view
 
-# ================= SALES LIST =================
+# SALES LIST
 @login_required
 def sales_list(request):
 
@@ -574,103 +579,66 @@ def sales_list(request):
     )
 
 
-# ================= ADD SALE =================
+# ADD SALE
 @login_required
 def add_sale(request):
 
-    products = Stock.objects.all()
+    products = Stock.objects.filter(quantity__gt=0).order_by("product_name")
+    form = SaleForm()
 
     if request.method == "POST":
+        form = SaleForm(request.POST)
 
-        product = get_object_or_404(
-            Stock,
-            id=request.POST["product"]
-        )
+        if form.is_valid():
+            sale = form.save()
+            log_audit(
+                request.user,
+                "SALE",
+                f"Created sale {sale.receipt_no} for {sale.customer_name} ({sale.quantity} x {sale.product.product_name})",
+                model_name="Sales",
+                object_id=sale.pk,
+            )
 
-        quantity_sold = int(request.POST["quantity"])
+            messages.success(
+                request,
+                f"Sale created successfully. Receipt No: {sale.receipt_no}"
+            )
+            return redirect("sales_list")
 
-        # Prevent overselling
-        if quantity_sold > product.quantity:
-            messages.error(request, "Not enough stock available.")
-            return redirect("add_sale")
-
-        sale = Sales.objects.create(
-            customer_name=request.POST["customer_name"],
-            customer_phone=request.POST["customer_phone"],
-            product=product,
-            quantity=quantity_sold,
-            unit_price=product.selling_price,
-            distance_km=request.POST.get("distance_km", 0),
-            payment_status=request.POST["payment_status"],
-        )
-
-        # reduce stock
-        product.quantity -= quantity_sold
-        product.save()
-
-        messages.success(
-            request,
-            f"Sale created successfully. Receipt No: {sale.receipt_no}"
-        )
-
-        return redirect("sales_list")
-
-    return render(request, "nyondo/add_sale.html", {"products": products})
+    return render(request, "nyondo/add_sale.html", {"form": form, "products": products})
 
 
-# ================= EDIT SALE =================
+# EDIT SALE
 @login_required
 def edit_sale(request, sale_id):
 
     sale = get_object_or_404(Sales, id=sale_id)
-    products = Stock.objects.all()
+    form = SaleForm(instance=sale)
 
     if request.method == "POST":
+        form = SaleForm(request.POST, instance=sale)
 
-        # restore old stock
-        sale.product.quantity += sale.quantity
-        sale.product.save()
+        if form.is_valid():
+            sale = form.save()
+            log_audit(
+                request.user,
+                "SALE",
+                f"Updated sale {sale.receipt_no} for {sale.customer_name}",
+                model_name="Sales",
+                object_id=sale.pk,
+            )
 
-        new_product = get_object_or_404(
-            Stock,
-            id=request.POST["product"]
-        )
-
-        new_quantity = int(request.POST["quantity"])
-
-        # prevent overselling
-        if new_quantity > new_product.quantity:
-            messages.error(request, "Not enough stock available.")
-            return redirect("edit_sale", sale_id=sale.id)
-
-        sale.customer_name = request.POST["customer_name"]
-        sale.customer_phone = request.POST["customer_phone"]
-        sale.product = new_product
-        sale.quantity = new_quantity
-        sale.unit_price = new_product.selling_price
-        sale.distance_km = request.POST.get("distance_km", 0)
-        sale.payment_status = request.POST["payment_status"]
-
-        sale.save()
-
-        # reduce new stock
-        new_product.quantity -= new_quantity
-        new_product.save()
-
-        messages.success(request, "Sale updated successfully.")
-        return redirect("sales_list")
+            messages.success(request, "Sale updated successfully.")
+            return redirect("sales_list")
 
     return render(
         request,
         "nyondo/edit_sale.html",
-        {
-            "sale": sale,
-            "products": products
-        }
+        {"form": form, "sale": sale}
     )
 
 
-# ================= SALE RECEIPT (VIEW) =================
+# SALE RECEIPT (VIEW)
 @login_required
 def receipts_list(request):
 
@@ -689,8 +657,8 @@ def sale_receipt(request, sale_id):
 
     return render(
         request,
-        "nyondo/receipt.html",
-        {"sale": sale}
+        "nyondo/receipt_details.html",
+        {"receipt": sale}
     )
 
 @login_required
@@ -701,21 +669,23 @@ def receipt_print(request, sale_id):
     return render(
         request,
         "nyondo/receipt_print.html",
-        {"sale": sale}
+        {"receipt": sale}
     )
 
-# ================= DELETE SALE =================
+# DELETE SALE
 @login_required
 def delete_sale(request, sale_id):
 
     sale = get_object_or_404(Sales, id=sale_id)
 
     if request.method == "POST":
-
-        # restore stock
-        sale.product.quantity += sale.quantity
-        sale.product.save()
-
+        log_audit(
+            request.user,
+            "DELETE",
+            f"Deleted sale {sale.receipt_no} for {sale.customer_name}",
+            model_name="Sales",
+            object_id=sale.pk,
+        )
         sale.delete()
 
         messages.success(request, "Sale deleted successfully.")
@@ -752,7 +722,14 @@ def add_credit(request):
 
         if form.is_valid():
 
-            form.save()
+            credit = form.save()
+            log_audit(
+                request.user,
+                "CREDIT",
+                f"Added supplier credit for {credit.supplier.name}: {credit.product_name} ({credit.quantity})",
+                model_name="SupplierCredit",
+                object_id=credit.pk,
+            )
 
             messages.success(
                 request,
@@ -793,7 +770,14 @@ def edit_credit(request, pk):
 
         if form.is_valid():
 
-            form.save()
+            credit = form.save()
+            log_audit(
+                request.user,
+                "CREDIT",
+                f"Updated supplier credit for {credit.supplier.name}: {credit.product_name} ({credit.quantity})",
+                model_name="SupplierCredit",
+                object_id=credit.pk,
+            )
 
             messages.success(
                 request,
@@ -830,6 +814,13 @@ def delete_credit(request, pk):
 
     if request.method == "POST":
 
+        log_audit(
+            request.user,
+            "DELETE",
+            f"Deleted supplier credit for {credit.supplier.name}: {credit.product_name}",
+            model_name="SupplierCredit",
+            object_id=credit.pk,
+        )
         credit.delete()
 
         messages.success(
@@ -851,7 +842,7 @@ def delete_credit(request, pk):
 
 #deposit scheme list view
 
-# ================= DEPOSIT LIST =================
+# DEPOSIT LIST
 @login_required
 def deposit_list(request):
 
@@ -868,7 +859,7 @@ def deposit_list(request):
     )
 
 
-# ================= ADD DEPOSIT =================
+# ADD DEPOSIT
 @login_required
 def add_deposit(request):
 
@@ -876,13 +867,20 @@ def add_deposit(request):
 
     if form.is_valid():
         deposit = form.save()
+        log_audit(
+            request.user,
+            "DEPOSIT",
+            f"Registered deposit for {deposit.customer_name}: {deposit.product_name} ({deposit.quantity})",
+            model_name="DepositScheme",
+            object_id=deposit.pk,
+        )
 
         messages.success(
             request,
             "Deposit registered successfully."
         )
 
-        return redirect("deposit_list")
+        return redirect("deposit_receipt_print", deposit_id=deposit.id)
 
     return render(
         request,
@@ -891,7 +889,31 @@ def add_deposit(request):
     )
 
 
-# ================= EDIT DEPOSIT =================
+@login_required
+def deposit_receipt(request, deposit_id):
+
+    deposit = get_object_or_404(DepositScheme, id=deposit_id)
+
+    return render(
+        request,
+        "nyondo/deposit_receipt_details.html",
+        {"deposit": deposit}
+    )
+
+
+@login_required
+def deposit_receipt_print(request, deposit_id):
+
+    deposit = get_object_or_404(DepositScheme, id=deposit_id)
+
+    return render(
+        request,
+        "nyondo/deposit_receipt_print.html",
+        {"deposit": deposit}
+    )
+
+
+# EDIT DEPOSIT
 @login_required
 def edit_deposit(request, pk):
 
@@ -900,7 +922,14 @@ def edit_deposit(request, pk):
     form = DepositSchemeForm(request.POST or None, instance=deposit)
 
     if form.is_valid():
-        form.save()
+        deposit = form.save()
+        log_audit(
+            request.user,
+            "DEPOSIT",
+            f"Updated deposit for {deposit.customer_name}: {deposit.product_name} ({deposit.quantity})",
+            model_name="DepositScheme",
+            object_id=deposit.pk,
+        )
 
         messages.success(
             request,
@@ -919,13 +948,20 @@ def edit_deposit(request, pk):
     )
 
 
-# ================= DELETE DEPOSIT =================
+# DELETE DEPOSIT
 @login_required
 def delete_deposit(request, pk):
 
     deposit = get_object_or_404(DepositScheme, pk=pk)
 
     if request.method == "POST":
+        log_audit(
+            request.user,
+            "DELETE",
+            f"Deleted deposit for {deposit.customer_name}: {deposit.product_name}",
+            model_name="DepositScheme",
+            object_id=deposit.pk,
+        )
         deposit.delete()
 
         messages.success(
@@ -941,7 +977,7 @@ def delete_deposit(request, pk):
         {"deposit": deposit}
     )
 
-#=========REPORTS VIEW =============
+# REPORTS VIEW
 @login_required
 def sales_report(request):
     sales = Sales.objects.select_related("product").order_by("-sale_date")
@@ -960,7 +996,7 @@ def sales_report(request):
     return render(request, "nyondo/reports/sales_report.html", context)
 
 
-# === STOCK REPORT ===
+# STOCK REPORT
 @login_required
 def stock_report(request):
     stocks = Stock.objects.annotate(
@@ -988,7 +1024,7 @@ def stock_report(request):
     return render(request, "nyondo/reports/stock_reports.html", context)
 
 
-# === PROFIT REPORT ===
+# PROFIT REPORT
 @login_required
 def profit_report(request):
     sales = Sales.objects.select_related("product").order_by("-sale_date")
@@ -1053,7 +1089,7 @@ def profit_report(request):
     return render(request, "nyondo/reports/profit_reports.html", context)
 
 
-# === SUPPLIER CREDIT REPORT ===
+# SUPPLIER CREDIT REPORT
 @login_required
 def credit_report(request):
     credits = SupplierCredit.objects.all().order_by("-id")
@@ -1076,7 +1112,7 @@ def credit_report(request):
     return render(request, "nyondo/reports/credit_reports.html", context)
 
 
-# === DEPOSIT REPORT ===
+# DEPOSIT REPORT
 @login_required
 def deposit_report(request):
     deposits = DepositScheme.objects.all().order_by("-id")
@@ -1107,10 +1143,33 @@ def deposit_report(request):
     return render(request, "nyondo/reports/deposit_reports.html", context)
 
 
-# === REPORTS HOME ===
+# REPORTS HOME
 @login_required
 def reports_home(request):
     return render(request, "nyondo/reports/reports_home.html")
+
+
+# AUDIT LOG VIEW
+@login_required
+def audit_log(request):
+    logs = AuditLog.objects.select_related("user").order_by("-timestamp")
+    query = request.GET.get("q")
+    action = request.GET.get("action")
+
+    if query:
+        logs = logs.filter(
+            Q(user__username__icontains=query) |
+            Q(description__icontains=query)
+        )
+
+    if action and action in dict(AuditLog.ACTION_TYPES):
+        logs = logs.filter(action=action)
+
+    return render(request, "nyondo/audit_log.html", {
+        "logs": logs,
+        "query": query,
+        "action": action,
+    })
 
 
 #         # AUDIT LOG

@@ -16,6 +16,14 @@
 
     </div>
 
+    <div class="dashboard-nav">
+        <a href="{% url 'stock_list' %}" class="nav-link">Stock List</a>
+        <a href="{% url 'add_stock' %}" class="nav-link">Add Inventory</a>
+        <a href="{% url 'stock_report' %}" class="nav-link">Stock Reports</a>
+        <a href="{% url 'audit_log' %}" class="nav-link">Audit Log</a>
+        <a href="{% url 'deposit_list' %}" class="nav-link">Deposit Summary</a>
+    </div>
+
     <!-- ================= KPI CARDS ================= -->
     <div class="dashboard-cards">
 
@@ -102,7 +110,9 @@
 
                     {% empty %}
                     <tr>
-                        <td colspan="6">No stock available</td>
+                        <td colspan="6" class="empty">
+                            No stock available yet. <a href="{% url 'add_stock' %}">Add a new stock item</a> to get started.
+                        </td>
                     </tr>
                     {% endfor %}
 
@@ -162,5 +172,34 @@
     </div>
 
 </div>
+
+<style>
+    .dashboard-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 20px 0;
+    }
+
+    .nav-link {
+        display: inline-block;
+        padding: 12px 18px;
+        background: #5a4b8a;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .nav-link:hover {
+        background: #483671;
+    }
+
+    .empty {
+        text-align: center;
+        padding: 18px;
+        color: #555;
+    }
+</style>
 
 {% endblock %}

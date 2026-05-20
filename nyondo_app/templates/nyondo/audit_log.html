@@ -1,0 +1,84 @@
+{% extends "nyondo/base.html" %}
+
+{% block content %}
+
+<h2>Audit Log</h2>
+
+<form method="get" class="audit-filter">
+    <input type="text" name="q" value="{{ query|default:'' }}" placeholder="Search user or description" />
+    <select name="action">
+        <option value="">All Actions</option>
+        {% for code,label in logs.model.ACTION_TYPES %}
+            <option value="{{ code }}" {% if action == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Filter</button>
+</form>
+
+{% if logs.exists %}
+    <div class="table-responsive">
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Model</th>
+                    <th>Object ID</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                    <tr>
+                        <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                        <td>{{ log.user.username|default:"System" }}</td>
+                        <td>{{ log.get_action_display }}</td>
+                        <td>{{ log.model_name|default:"N/A" }}</td>
+                        <td>{{ log.object_id|default:"-" }}</td>
+                        <td>{{ log.description }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>No audit entries found.</p>
+{% endif %}
+
+<style>
+.audit-filter {
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+.audit-filter input,
+.audit-filter select,
+.audit-filter button {
+    padding:10px 12px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+.audit-filter button {
+    background:#5a4b8a;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+.audit-table {
+    width:100%;
+    border-collapse:collapse;
+}
+.audit-table th,
+.audit-table td {
+    border:1px solid #ddd;
+    padding:12px;
+    text-align:left;
+}
+.audit-table th {
+    background:#f2f2f2;
+}
+</style>
+
+{% endblock %}

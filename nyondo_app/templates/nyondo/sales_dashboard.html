@@ -2,8 +2,6 @@
 
 {% block content %}
 
-    <!-- SIDEBAR CONTENT REMOVED (NOW HANDLED BY BASE NAVBAR) -->
-
     <!-- MAIN CONTENT -->
 
     <div class="main-content">
@@ -19,6 +17,14 @@
                 calculate transport charges and track revenue.
             </p>
 
+        </div>
+
+        <div class="dashboard-nav">
+            <a href="{% url 'sales_list' %}" class="nav-link">Sales List</a>
+            <a href="{% url 'add_sale' %}" class="nav-link">New Sale</a>
+            <a href="{% url 'receipts_list' %}" class="nav-link">Receipts</a>
+            <a href="{% url 'sales_report' %}" class="nav-link">Sales Reports</a>
+            <a href="{% url 'credit_list' %}" class="nav-link">Supplier Credits</a>
         </div>
 
         <!-- SALES CARDS -->
@@ -50,6 +56,21 @@
                 <p>UGX {{ pending_payments }}</p>
             </div>
 
+            <div class="card">
+                <h3>Paid Sales</h3>
+                <p>{{ paid_sales }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Today Sales</h3>
+                <p>{{ today_sales }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Today Revenue</h3>
+                <p>UGX {{ today_revenue }}</p>
+            </div>
+
         </div>
 
         <!-- RECENT SALES -->
@@ -74,10 +95,18 @@
 
                     <tr>
                         <td>{{ sale.customer_name }}</td>
-                        <td>{{ sale.product_name }}</td>
+                        <td>{{ sale.product.product_name }}</td>
                         <td>{{ sale.quantity }}</td>
-                        <td>UGX {{ sale.total_amount }}</td>
+                        <td>UGX {{ sale.final_total }}</td>
                         <td>{{ sale.sale_date }}</td>
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="5" class="empty">
+                            No sales recorded yet. <a href="{% url 'add_sale' %}">Create a sale now</a>.
+                        </td>
                     </tr>
 
                     {% endfor %}
@@ -106,6 +135,14 @@
                         <td>{{ product.units_sold }}</td>
                     </tr>
 
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="2" class="empty">
+                            No product sales yet. Start by recording a new sale.
+                        </td>
+                    </tr>
+
                     {% endfor %}
 
                 </table>
@@ -127,5 +164,33 @@
         </div>
 
     </div>
+
+    <style>
+        .dashboard-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .nav-link {
+            padding: 12px 18px;
+            background: #5a4b8a;
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .nav-link:hover {
+            background: #483671;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 18px;
+            color: #555;
+        }
+    </style>
 
 {% endblock %}

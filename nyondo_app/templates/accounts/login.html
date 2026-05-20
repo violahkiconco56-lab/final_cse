@@ -6,125 +6,233 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        * {
+
+        *{
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: "Segoe UI", sans-serif;
         }
 
-        body {
-            height: 100vh;
+        body{
+            min-height: 100vh;
             display: flex;
-            background: #1f2937;
             justify-content: center;
             align-items: center;
+            background: linear-gradient(135deg, #ede5f6, #d8c4ec);
+            color: #3b2d52;
         }
 
-        .login-card {
-            width: 380px;
-            background: white;
-            border-radius: 8px;
-            padding: 35px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        .login-card{
+            width: 100%;
+            max-width: 420px;
+            background: #f6effc;
+            padding: 36px;
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(95, 68, 146, 0.16);
+            animation: fadeIn 0.55s ease;
+            border: 1px solid rgba(117, 80, 177, 0.15);
         }
 
-        .title {
+        @keyframes fadeIn{
+            from{
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to{
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo{
             text-align: center;
-            font-size: 22px;
-            margin-bottom: 20px;
-            color: #1f2937;
+            margin-bottom: 26px;
         }
 
-        .title span {
-            color: #f4b400;
+        .logo h1{
+            color: #4e3b72;
+            font-size: 30px;
+            margin-bottom: 6px;
         }
 
-        .form-group {
-            margin-bottom: 15px;
+        .logo span{
+            color: #7f5fbf;
         }
 
-        label {
-            font-size: 13px;
+        .logo p{
+            color: #6d5d88;
+            font-size: 14px;
+        }
+
+        .message{
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            text-align: center;
+            background: rgba(117, 80, 177, 0.12);
+            color: #3b2d52;
+        }
+
+        .error{
+            background: rgba(188, 116, 143, 0.18);
+            color: #6c2e4d;
+        }
+
+        .success{
+            background: rgba(138, 120, 201, 0.18);
+            color: #3b2d52;
+        }
+
+        .form-group{
+            margin-bottom: 18px;
+        }
+
+        .form-group label{
             display: block;
-            margin-bottom: 5px;
-            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #4e3b72;
+            font-weight: 600;
         }
 
-        input {
+        .form-group input{
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            padding: 14px 14px;
+            border: 1px solid rgba(117, 80, 177, 0.3);
+            border-radius: 10px;
             outline: none;
+            background: #fff;
+            transition: 0.25s ease;
+            color: #3b2d52;
         }
 
-        input:focus {
-            border-color: #f4b400;
+        .form-group input:focus{
+            border-color: #7f5fbf;
+            box-shadow: 0 0 0 4px rgba(140, 111, 205, 0.18);
         }
 
-        .btn {
+        .btn{
             width: 100%;
-            padding: 12px;
-            background: #f4b400;
+            padding: 14px;
             border: none;
-            border-radius: 4px;
-            font-weight: bold;
+            border-radius: 12px;
+            background: #7f5fbf;
+            color: #f8f5ff;
+            font-size: 15px;
+            font-weight: 700;
             cursor: pointer;
-            transition: 0.3s;
+            transition: background 0.25s ease, transform 0.2s ease;
         }
 
-        .btn:hover {
-            background: #d89d00;
+        .btn:hover{
+            background: #64429d;
+            transform: translateY(-1px);
         }
 
-        .error {
-            color: red;
+        .footer{
+            margin-top: 20px;
+            text-align: center;
             font-size: 13px;
-            text-align: center;
-            margin-bottom: 10px;
+            color: #6d5d88;
         }
 
-        .footer {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 12px;
-            color: #777;
+        @media(max-width: 480px){
+            .login-card{
+                width: 92%;
+                padding: 26px;
+            }
         }
 
     </style>
+
 </head>
 
 <body>
 
 <div class="login-card">
 
-    <div class="title">
-        Nyondo <span>Hardware</span>
+    <!-- LOGO -->
+
+    <div class="logo">
+
+        <h1>
+            Nyondo <span>Hardware</span>
+        </h1>
+
+        <p>
+            Stock & Sales Management System
+        </p>
+
     </div>
 
-    {% if error %}
-        <div class="error">{{ error }}</div>
+    <!-- DJANGO MESSAGES -->
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="message 
+                {% if message.tags == 'error' %}
+                    error
+                {% else %}
+                    success
+                {% endif %}
+            ">
+
+                {{ message }}
+
+            </div>
+
+        {% endfor %}
+
     {% endif %}
 
+    <!-- LOGIN FORM -->
+
     <form method="POST">
+
         {% csrf_token %}
 
         <div class="form-group">
+
             <label>Username</label>
-            <input type="text" name="username" required>
+
+            <input
+                type="text"
+                name="username"
+                placeholder="Enter username"
+                required
+            >
+
         </div>
 
         <div class="form-group">
+
             <label>Password</label>
-            <input type="password" name="password" required>
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Enter password"
+                required
+            >
+
         </div>
 
-        <button type="submit" class="btn">Login</button>
+        <button type="submit" class="btn">
+            Login
+        </button>
+
     </form>
 
+    <!-- FOOTER -->
+
     <div class="footer">
-        Secure Stock & Sales System
+
+        Secure Inventory & POS System
+
     </div>
 
 </div>

@@ -1,13 +1,13 @@
 from django.db import models
+from django.db import transaction
+from django.db.models import F
 from django.core.validators import MinValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
 import uuid
 from django.contrib.auth.models import User
 
 
-# =========================
 # STOCK MODEL
-# =========================
 
 class Stock(models.Model):
 
@@ -58,6 +58,14 @@ class Stock(models.Model):
         elif self.quantity <= self.reorder_level:
             return "LOW"
         return "OK"
+
+    @classmethod
+    def low_stock_items(cls):
+        return cls.objects.filter(quantity__lte=F("reorder_level")).order_by("quantity")
+
+    @classmethod
+    def low_stock_count(cls):
+        return cls.low_stock_items().count()
 
     def __str__(self):
         return self.product_name
@@ -122,11 +130,51 @@ class Sales(models.Model):
     # SAVE
 
     def save(self, *args, **kwargs):
-        if not self.receipt_no:
-            self.receipt_no = uuid.uuid4().hex[:10].upper()
+        with transaction.atomic():
+            previous_sale = None
+            if self.pk:
+                previous_sale = Sales.objects.select_related("product").filter(pk=self.pk).first()
 
-        self.clean()
-        super().save(*args, **kwargs)
+            if self.pk and previous_sale:
+                if self.product == previous_sale.product:
+                    stock_change = self.quantity - previous_sale.quantity
+                    if stock_change > 0 and stock_change > self.product.quantity:
+                        raise ValidationError(
+                            f"Not enough stock available. Available: {self.product.quantity}, requested change: {stock_change}"
+                        )
+                    self.product.quantity -= stock_change
+                    self.product.save()
+                else:
+                    old_product = previous_sale.product
+                    old_product.quantity += previous_sale.quantity
+                    old_product.save()
+
+                    if self.quantity > self.product.quantity:
+                        raise ValidationError(
+                            f"Not enough stock available. Available: {self.product.quantity}, requested: {self.quantity}"
+                        )
+                    self.product.quantity -= self.quantity
+                    self.product.save()
+            else:
+                if self.quantity > self.product.quantity:
+                    raise ValidationError(
+                        f"Not enough stock available. Available: {self.product.quantity}, requested: {self.quantity}"
+                    )
+                self.product.quantity -= self.quantity
+                self.product.save()
+
+            if not self.receipt_no:
+                self.receipt_no = uuid.uuid4().hex[:10].upper()
+
+            self.clean()
+            super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        with transaction.atomic():
+            product = self.product
+            product.quantity += self.quantity
+            product.save()
+            super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"{self.customer_name} - {self.product.product_name}"

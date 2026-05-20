@@ -1,11 +1,185 @@
-<h2>Add Stock</h2>
+{% extends "nyondo/base.html" %}
 
-<form method="POST">
-    {% csrf_token %}
+{% block title %}Add Stock | Nyondo Hardware{% endblock %}
 
-    {{ form.as_p }}
+{% block content %}
 
-    <button class="btn btn-primary">
-        Add Stock
-    </button>
-</form>
+<div class="form-container">
+
+    <h2>Add Stock</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        <div class="grid">
+
+            <div class="field">
+                <label>Product Name</label>
+                {{ form.product_name }}
+                {{ form.product_name.errors }}
+            </div>
+
+            <div class="field">
+                <label>Category</label>
+                {{ form.category }}
+                {{ form.category.errors }}
+            </div>
+
+            <div class="field">
+                <label>Quantity</label>
+                {{ form.quantity }}
+                {{ form.quantity.errors }}
+            </div>
+
+            <div class="field">
+                <label>Buying Price</label>
+                {{ form.buying_price }}
+                {{ form.buying_price.errors }}
+            </div>
+
+            <div class="field">
+                <label>Selling Price</label>
+                {{ form.selling_price }}
+                {{ form.selling_price.errors }}
+            </div>
+
+            <div class="field">
+                <label>Supplier</label>
+                {{ form.supplier_name }}
+                {{ form.supplier_name.errors }}
+            </div>
+
+            <div class="field full">
+                <label>Description</label>
+                {{ form.description }}
+                {{ form.description.errors }}
+            </div>
+
+            <div class="field">
+                <label>Reorder Level</label>
+                {{ form.reorder_level }}
+                {{ form.reorder_level.errors }}
+            </div>
+
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="btn-save">
+                Add Stock
+            </button>
+
+            <a href="{% url 'stock_list' %}" class="btn-back">
+                Back
+            </a>
+        </div>
+
+    </form>
+
+</div>
+
+<style>
+
+.form-container{
+    max-width: 700px;
+    margin: 30px auto;
+    padding: 25px;
+    background: #fff;
+    border-radius: 10px;
+}
+
+.form-container h2{
+    margin-bottom: 20px;
+    color: #5a4b8a;
+}
+
+.grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.field{
+    display: flex;
+    flex-direction: column;
+}
+
+.field.full{
+    grid-column: 1 / -1;
+}
+
+label{
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #444;
+}
+
+input,
+select,
+textarea{
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    outline: none;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+    border-color: #5a4b8a;
+}
+
+textarea{
+    min-height: 100px;
+    resize: vertical;
+}
+
+.buttons{
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-save{
+    background: #5a4b8a;
+    color: white;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-back{
+    background: #8a79b2;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.btn-save:hover,
+.btn-back:hover{
+    opacity: 0.9;
+}
+
+.errorlist{
+    color: red;
+    margin-top: 5px;
+    font-size: 13px;
+    list-style: none;
+    padding: 0;
+}
+
+@media (max-width: 768px){
+    .grid{
+        grid-template-columns: 1fr;
+    }
+}
+
+</style>
+
+{% endblock %}
