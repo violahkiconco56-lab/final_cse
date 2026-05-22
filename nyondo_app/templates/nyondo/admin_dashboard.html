@@ -5,217 +5,354 @@
 
 <div class="dashboard-container">
 
-    <!-- page title -->
+    <!-- ================= HEADER ================= -->
+
     <div class="dashboard-header">
-        <h1>Admin Dashboard</h1>
-        <p>Business Overview</p>
+
+        <div>
+
+            <h1>Admin Dashboard</h1>
+
+            <p>
+                Complete business overview, sales analytics and system monitoring.
+            </p>
+
+        </div>
+
     </div>
 
-    <!-- top cards -->
-    <div class="cards">
+    <div class="header-actions">
+    <a href="{% url 'register' %}" class="register-btn">
+        + Register User
+    </a>
+</div>
 
-        <div class="card">
+    <!-- ================= MAIN STATS ================= -->
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
             <h3>Total Revenue</h3>
             <h2>UGX {{ total_revenue|floatformat:0|intcomma }}</h2>
         </div>
 
-        <div class="card">
+        <div class="stat-card">
             <h3>Total Profit</h3>
             <h2>UGX {{ total_profit|floatformat:0|intcomma }}</h2>
         </div>
 
-        <div class="card">
+        <div class="stat-card">
             <h3>Profit Margin</h3>
             <h2>{{ profit_margin }}%</h2>
         </div>
 
-        <div class="card">
+        <div class="stat-card">
             <h3>Stock Value</h3>
             <h2>UGX {{ stock_value|floatformat:0|intcomma }}</h2>
         </div>
 
-        <div class="card">
+        <div class="stat-card">
             <h3>Total Orders</h3>
             <h2>{{ total_orders }}</h2>
         </div>
 
-        <div class="card">
+        <div class="stat-card">
             <h3>Items Sold</h3>
             <h2>{{ total_items_sold }}</h2>
         </div>
 
-        <div class="card">
+        <div class="stat-card">
             <h3>Total Products</h3>
             <h2>{{ total_products }}</h2>
         </div>
 
-        <div class="card audit-card">
+        <div class="stat-card audit-card">
             <h3>Audit Entries</h3>
             <h2>{{ audit_count }}</h2>
-            <p>{{ recent_audits.count }} recent actions</p>
+            <small>{{ recent_audits.count }} recent activities</small>
         </div>
 
-        <div class="card">
+        <div class="stat-card">
             <h3>Total Credit</h3>
             <h2>UGX {{ total_credit|floatformat:0|intcomma }}</h2>
         </div>
 
     </div>
 
-    <!-- middle cards -->
-    <div class="cards">
+    <!-- ================= MINI CARDS ================= -->
 
-        <div class="small-card warning">
-            <h3>Low Stock</h3>
+    <div class="mini-grid">
+
+        <div class="mini-card warning">
+            <h4>Low Stock</h4>
             <h2>{{ low_stock }}</h2>
         </div>
 
-        <div class="small-card danger">
-            <h3>Out Of Stock</h3>
+        <div class="mini-card danger">
+            <h4>Out Of Stock</h4>
             <h2>{{ out_of_stock }}</h2>
         </div>
 
-        <div class="small-card success">
-            <h3>Cleared Credit</h3>
+        <div class="mini-card success">
+            <h4>Cleared Credit</h4>
             <h2>{{ cleared_credit }}</h2>
         </div>
 
-        <div class="small-card pending">
-            <h3>Pending Credit</h3>
+        <div class="mini-card pending">
+            <h4>Pending Credit</h4>
             <h2>{{ pending_credit }}</h2>
         </div>
 
-        <div class="small-card">
-            <h3>Free Deliveries</h3>
+        <div class="mini-card">
+            <h4>Free Deliveries</h4>
             <h2>{{ free_deliveries }}</h2>
         </div>
 
-        <div class="small-card">
-            <h3>Paid Deliveries</h3>
+        <div class="mini-card">
+            <h4>Paid Deliveries</h4>
             <h2>{{ charged_deliveries }}</h2>
         </div>
 
     </div>
 
-    <!-- recent sales -->
-    <div class="table-section">
+    <!-- ================= MAIN CONTENT GRID ================= -->
 
-        <div class="table-header">
-            <h2>Recent Sales</h2>
+    <div class="content-grid">
+
+        <!-- ================= RECENT SALES ================= -->
+
+        <div class="table-section">
+
+            <div class="section-header">
+                <h2>Recent Sales</h2>
+            </div>
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Customer</th>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Date</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for sale in recent_sales %}
+
+                        <tr>
+
+                            <td>
+
+                                <div class="customer-info">
+
+                                    <div class="avatar">
+                                        {{ sale.customer_name|slice:":1" }}
+                                    </div>
+
+                                    <span>
+                                        {{ sale.customer_name }}
+                                    </span>
+
+                                </div>
+
+                            </td>
+
+                            <td>
+
+                                <span class="badge">
+                                    {{ sale.product.product_name }}
+                                </span>
+
+                            </td>
+
+                            <td>{{ sale.quantity }}</td>
+
+                            <td class="amount">
+                                UGX {{ sale.final_total|floatformat:0|intcomma }}
+                            </td>
+
+                            <td>{{ sale.sale_date }}</td>
+
+                        </tr>
+
+                        {% empty %}
+
+                        <tr>
+
+                            <td colspan="5">
+
+                                <div class="empty-state">
+
+                                    <h3>No Sales Available</h3>
+
+                                    <p>
+                                        Sales records will appear here once transactions are made.
+                                    </p>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
         </div>
 
-        <table>
+        <!-- ================= SIDE PANEL ================= -->
 
-            <thead>
-                <tr>
-                    <th>Customer</th>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Total</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
+        <div class="side-panel">
 
-            <tbody>
+            <!-- ================= TOP PRODUCTS ================= -->
 
-                {% for sale in recent_sales %}
+            <div class="panel-card">
 
-                <tr>
-                    <td>{{ sale.customer_name }}</td>
-                    <td>{{ sale.product.product_name }}</td>
-                    <td>{{ sale.quantity }}</td>
-                    <td>UGX {{ sale.final_total|floatformat:0|intcomma }}</td>
-                    <td>{{ sale.sale_date }}</td>
-                </tr>
+                <div class="section-header">
+                    <h2>Top Products</h2>
+                </div>
 
-                {% empty %}
+                <div class="products-list">
 
-                <tr>
-                    <td colspan="5">No sales available</td>
-                </tr>
+                    {% for product in top_products %}
 
-                {% endfor %}
+                    <div class="product-item">
 
-            </tbody>
+                        <div>
 
-        </table>
+                            <strong>
+                                {{ product.product__product_name }}
+                            </strong>
+
+                            <p>
+                                Best performing product
+                            </p>
+
+                        </div>
+
+                        <span class="sold-badge">
+                            {{ product.total_sold }} Sold
+                        </span>
+
+                    </div>
+
+                    {% empty %}
+
+                    <p class="no-data">
+                        No products available.
+                    </p>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <!-- ================= AUDIT INSIGHT ================= -->
+
+            <div class="insight-card">
+
+                <h3>System Monitoring</h3>
+
+                <p>
+                    The audit system tracks user actions,
+                    updates and operational activities
+                    across the platform in real time.
+                </p>
+
+            </div>
+
+        </div>
 
     </div>
 
-    <!-- audit activity -->
+    <!-- ================= AUDIT TABLE ================= -->
+
     <div class="table-section">
 
-        <div class="table-header">
+        <div class="section-header">
             <h2>Recent Audit Activity</h2>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Action</th>
-                    <th>Model</th>
-                    <th>Object ID</th>
-                    <th>Description</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for log in recent_audits %}
-                <tr>
-                    <td>{{ log.user.username|default:"System" }}</td>
-                    <td>{{ log.get_action_display }}</td>
-                    <td>{{ log.model_name|default:"N/A" }}</td>
-                    <td>{{ log.object_id|default:"-" }}</td>
-                    <td>{{ log.description }}</td>
-                    <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6">No audit activity available</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-wrapper">
 
-    </div>
+            <table>
 
-    <!-- top products -->
-    <div class="table-section">
+                <thead>
 
-        <div class="table-header">
-            <h2>Top Products</h2>
+                    <tr>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Model</th>
+                        <th>Object ID</th>
+                        <th>Description</th>
+                        <th>Date</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for log in recent_audits %}
+
+                    <tr>
+
+                        <td>{{ log.user.username|default:"System" }}</td>
+
+                        <td>
+
+                            <span class="action-badge">
+                                {{ log.get_action_display }}
+                            </span>
+
+                        </td>
+
+                        <td>{{ log.model_name|default:"N/A" }}</td>
+
+                        <td>{{ log.object_id|default:"-" }}</td>
+
+                        <td>{{ log.description }}</td>
+
+                        <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="6">
+
+                            <div class="empty-state">
+
+                                <h3>No Audit Activity</h3>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
         </div>
-
-        <table>
-
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Units Sold</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                {% for product in top_products %}
-
-                <tr>
-                    <td>{{ product.product__product_name }}</td>
-                    <td>{{ product.total_sold }}</td>
-                </tr>
-
-                {% empty %}
-
-                <tr>
-                    <td colspan="2">No products available</td>
-                </tr>
-
-                {% endfor %}
-
-            </tbody>
-
-        </table>
 
     </div>
 
@@ -223,133 +360,364 @@
 
 <style>
 
-.dashboard-container{
-    padding: 20px;
+    *{
+        box-sizing:border-box;
+    }
+
+    body{
+        background:#f5f6fb;
+    }
+
+    .dashboard-container{
+        padding:25px;
+    }
+
+    /* ================= HEADER ================= */
+
+    .dashboard-header{
+        margin-bottom:25px;
+    }
+
+    .dashboard-header h1{
+        color:#5a4b8a;
+        font-size:32px;
+        margin-bottom:8px;
+    }
+
+    .dashboard-header p{
+        color:#777;
+        font-size:15px;
+    }
+
+    .header-actions{
+    display:flex;
+    align-items:center;
 }
 
-.dashboard-header{
-    margin-bottom: 25px;
-}
-
-.dashboard-header h1{
-    font-size: 32px;
-    color: #222;
-}
-
-.dashboard-header p{
-    color: gray;
-    margin-top: 5px;
-}
-
-.cards{
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-    gap: 20px;
-    margin-bottom: 25px;
-}
-
-.card{
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-}
-
-.card h3{
-    color: gray;
-    margin-bottom: 10px;
-    font-size: 16px;
-}
-
-.card h2{
-    color: #111;
-    font-size: 25px;
-}
-
-.small-card{
-    background: white;
-    padding: 18px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-}
-
-.small-card h3{
-    margin-bottom: 10px;
-    font-size: 16px;
-}
-
-.small-card h2{
-    font-size: 24px;
-}
-
-.warning{
-    border-left: 5px solid orange;
-}
-
-.danger{
-    border-left: 5px solid red;
-}
-
-.success{
-    border-left: 5px solid green;
-}
-
-.pending{
-    border-left: 5px solid #007bff;
-}
-
-.table-section{
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-}
-
-.table-header{
-    margin-bottom: 20px;
-}
-
-.table-header h2{
-    color: #222;
-}
-
-table{
-    width: 100%;
-    border-collapse: collapse;
-}
-
-table th{
-    background: #f5f5f5;
-    padding: 14px;
+.register-btn{
+    background:#5a4b8a;
+    color:white;
+    padding:10px 16px;
+    border-radius:10px;
+    text-decoration:none;
+    font-size:14px;
+    font-weight:600;
+    transition:0.2s;
     text-align: left;
 }
 
-table td{
-    padding: 14px;
-    border-bottom: 1px solid #eee;
+.register-btn:hover{
+    background:#3f336a;
 }
 
-table tr:hover{
-    background: #fafafa;
-}
+    /* ================= MAIN CARDS ================= */
 
-@media(max-width:768px){
-
-    .dashboard-header h1{
-        font-size: 24px;
+    .stats-grid{
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+        gap:16px;
+        margin-bottom:20px;
     }
 
-    .card h2{
-        font-size: 20px;
+    .stat-card{
+        background:white;
+        border-radius:16px;
+        padding:18px;
+        box-shadow:0 4px 12px rgba(0,0,0,0.05);
+        position:relative;
+        overflow:hidden;
+    }
+
+    .stat-card::before{
+        content:'';
+        position:absolute;
+        top:0;
+        left:0;
+        width:100%;
+        height:4px;
+        background:#5a4b8a;
+    }
+
+    .stat-card h3{
+        color:#777;
+        font-size:14px;
+        margin-bottom:12px;
+        font-weight:600;
+    }
+
+    .stat-card h2{
+        color:#222;
+        font-size:22px;
+        margin:0;
+    }
+
+    .stat-card small{
+        display:block;
+        margin-top:8px;
+        color:#888;
+        font-size:12px;
+    }
+
+    .audit-card::before{
+        background:#1f9d74;
+    }
+
+    /* ================= MINI CARDS ================= */
+
+    .mini-grid{
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+        gap:15px;
+        margin-bottom:25px;
+    }
+
+    .mini-card{
+        background:white;
+        border-radius:14px;
+        padding:16px;
+        text-align:center;
+        box-shadow:0 4px 12px rgba(0,0,0,0.05);
+        border-left:4px solid #5a4b8a;
+    }
+
+    .mini-card h4{
+        font-size:14px;
+        color:#666;
+        margin-bottom:10px;
+    }
+
+    .mini-card h2{
+        font-size:22px;
+        margin:0;
+        color:#222;
+    }
+
+    .warning{
+        border-left-color:orange;
+    }
+
+    .danger{
+        border-left-color:red;
+    }
+
+    .success{
+        border-left-color:green;
+    }
+
+    .pending{
+        border-left-color:#007bff;
+    }
+
+    /* ================= CONTENT GRID ================= */
+
+    .content-grid{
+        display:grid;
+        grid-template-columns:2fr 1fr;
+        gap:20px;
+        margin-bottom:25px;
+    }
+
+    @media(max-width:1000px){
+
+        .content-grid{
+            grid-template-columns:1fr;
+        }
+
+    }
+
+    /* ================= TABLE SECTION ================= */
+
+    .table-section,
+    .panel-card,
+    .insight-card{
+        background:white;
+        border-radius:18px;
+        padding:22px;
+        box-shadow:0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom:25px;
+    }
+
+    .section-header{
+        margin-bottom:20px;
+    }
+
+    .section-header h2{
+        color:#5a4b8a;
+        margin:0;
+        font-size:22px;
+    }
+
+    .table-wrapper{
+        overflow-x:auto;
     }
 
     table{
-        font-size: 14px;
+        width:100%;
+        border-collapse:collapse;
     }
 
-}
+    thead{
+        background:#f3f0fb;
+    }
+
+    th{
+        padding:14px;
+        text-align:left;
+        color:#5a4b8a;
+        font-size:13px;
+    }
+
+    td{
+        padding:14px;
+        border-bottom:1px solid #eee;
+        font-size:14px;
+    }
+
+    tr:hover{
+        background:#faf9fd;
+    }
+
+    /* ================= CUSTOMER ================= */
+
+    .customer-info{
+        display:flex;
+        align-items:center;
+        gap:10px;
+    }
+
+    .avatar{
+        width:34px;
+        height:34px;
+        border-radius:50%;
+        background:#5a4b8a;
+        color:white;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-weight:700;
+        font-size:14px;
+    }
+
+    /* ================= BADGES ================= */
+
+    .badge{
+        background:#eee8ff;
+        color:#5a4b8a;
+        padding:6px 12px;
+        border-radius:30px;
+        font-size:12px;
+        font-weight:600;
+    }
+
+    .sold-badge{
+        background:#5a4b8a;
+        color:white;
+        padding:6px 12px;
+        border-radius:20px;
+        font-size:12px;
+        font-weight:600;
+        white-space:nowrap;
+    }
+
+    .action-badge{
+        background:#f0ebff;
+        color:#5a4b8a;
+        padding:5px 10px;
+        border-radius:20px;
+        font-size:12px;
+        font-weight:600;
+    }
+
+    .amount{
+        color:#1f9d74;
+        font-weight:700;
+    }
+
+    /* ================= PRODUCTS ================= */
+
+    .products-list{
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+    }
+
+    .product-item{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:12px;
+        padding:14px;
+        background:#faf8ff;
+        border-radius:14px;
+        border-left:4px solid #5a4b8a;
+    }
+
+    .product-item p{
+        margin:4px 0 0;
+        color:#777;
+        font-size:12px;
+    }
+
+    .no-data{
+        color:#777;
+    }
+
+    /* ================= INSIGHT ================= */
+
+    .insight-card{
+        background:linear-gradient(135deg,#5a4b8a,#483671);
+        color:white;
+    }
+
+    .insight-card h3{
+        margin-bottom:12px;
+    }
+
+    .insight-card p{
+        color:#f0ecff;
+        line-height:1.7;
+    }
+
+
+    .empty-state{
+        text-align:center;
+        padding:40px 20px;
+    }
+
+    .empty-state h3{
+        color:#5a4b8a;
+        margin-bottom:10px;
+    }
+
+    .empty-state p{
+        color:#777;
+    }
+
+    /* MOBILE */
+
+    @media(max-width:768px){
+
+        .dashboard-container{
+            padding:18px;
+        }
+
+        .dashboard-header h1{
+            font-size:26px;
+        }
+
+        .stat-card h2{
+            font-size:20px;
+        }
+
+        .mini-card h2{
+            font-size:18px;
+        }
+
+        table{
+            font-size:13px;
+        }
+
+    }
 
 </style>
 

@@ -4,12 +4,10 @@
     <title>Nyondo System</title>
 
     <style>
-
         :root {
             --bg: #f3eef9;
             --surface: #efe5f5;
             --surface-soft: #f7f1fb;
-            --panel: #e8dcf3;
             --sidebar: #5d4492;
             --sidebar-hover: #7f66bf;
             --text: #2f1f45;
@@ -23,7 +21,6 @@
         body {
             margin: 0;
             font-family: "Segoe UI", Arial, sans-serif;
-            display: flex;
             background: var(--bg);
             color: var(--text);
         }
@@ -35,232 +32,150 @@
             background: var(--sidebar);
             color: var(--button-text);
             position: fixed;
+            top: 0;
+            left: 0;
             padding-top: 24px;
             overflow-y: auto;
-            box-shadow: 2px 0 18px rgba(79, 53, 123, 0.2);
         }
 
         .sidebar h2 {
             text-align: center;
-            color: #f4e9ff;
-            margin-bottom: 22px;
-            letter-spacing: 0.08em;
+            color: #fff;
+            margin-bottom: 20px;
         }
 
         .sidebar a {
             display: block;
+            padding: 12px 22px;
             color: var(--button-text);
-            padding: 14px 24px;
             text-decoration: none;
-            transition: background 0.2s ease, color 0.2s ease;
-            font-size: 0.95rem;
             border-left: 4px solid transparent;
         }
 
-        .sidebar a:hover,
-        .sidebar a.active {
+        .sidebar a:hover {
             background: var(--sidebar-hover);
-            color: var(--button-text);
-            border-left-color: rgba(255,255,255,0.35);
         }
 
-        .sidebar .menu-title {
-            padding: 12px 24px 8px;
-            font-size: 0.78rem;
-            color: rgba(255,255,255,0.75);
+        .menu-title {
+            padding: 10px 22px;
+            font-size: 12px;
+            opacity: 0.7;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-top: 18px;
         }
 
-        /* MAIN AREA */
+        /* MAIN CONTENT AREA */
         .main {
             margin-left: 260px;
             width: calc(100% - 260px);
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* TOPBAR */
         .topbar {
             background: var(--surface);
-            padding: 18px 26px;
+            padding: 15px 25px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 1px 14px rgba(74, 43, 123, 0.08);
             border-bottom: 1px solid var(--border);
-        }
-
-        .topbar div {
-            color: var(--text);
-            font-weight: 600;
         }
 
         .container {
-            padding: 24px 30px;
+            padding: 20px;
+            flex: 1;
         }
-
-        .card,
-        .section-box,
-        .form-container,
-        .message,
-        .panel {
-            background: var(--surface-soft);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: 0 8px 28px rgba(88, 64, 138, 0.06);
-        }
-
-        h1, h2, h3, h4, h5 {
-            color: var(--text);
-        }
-
-        p, label, span, td, th, a, input, select, textarea, button {
-            color: var(--text-muted);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 18px;
-        }
-
-        th, td {
-            padding: 14px 14px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        th {
-            background: rgba(127, 102, 191, 0.14);
-            color: var(--text);
-        }
-
-        button,
-        .btn,
-        input[type="submit"],
-        .btn-primary,
-        .btn-save {
-            background: var(--button);
-            color: var(--button-text);
-            border: none;
-            border-radius: 10px;
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: background 0.25s ease;
-        }
-
-        button:hover,
-        .btn:hover,
-        .btn-primary:hover,
-        .btn-save:hover,
-        input[type="submit"]:hover {
-            background: var(--button-hover);
-        }
-
-        .warning {
-            margin-top: 24px;
-            padding: 18px 22px;
-            border-left: 4px solid rgba(117, 80, 177, 0.8);
-            background: #efebf7;
-            color: var(--text);
-            border-radius: 12px;
-        }
-
-        @media (max-width: 900px) {
-            .main {
-                margin-left: 0;
-                width: 100%;
-            }
-
-            .sidebar {
-                position: relative;
-                width: 100%;
-                height: auto;
-            }
-
-            .topbar {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
     </style>
-
 </head>
 
 <body>
 
 <!-- SIDEBAR -->
 <div class="sidebar">
-
     <h2>NYONDO</h2>
 
-    {% with group=user.groups.first %}
-
-    <!-- ADMIN -->
+    <!-- Convert the group query to a string and lower-case it to remove case-sensitivity issues -->
     {% if user.is_superuser %}
+        <!-- 👑 ADMIN NAVBAR -->
+        <div class="menu-title">Dashboard</div>
+        <a href="{% url 'admin_dashboard' %}">Overview</a>
 
-        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+        <div class="menu-title">Stock Management</div>
+        <a href="{% url 'stock_dashboard' %}">Stock Dashboard</a>
+        <a href="{% url 'add_stock' %}">Add Stock</a>
+        <a href="{% url 'stock_list' %}">Stock List</a>
+        <a href="{% url 'stock_report' %}">Stock Report</a>
 
-        <div class="menu-title">Operations</div>
-        <a href="{% url 'stock_dashboard' %}">Stock</a>
-        <a href="{% url 'sales_dashboard' %}">Sales</a>
+        <div class="menu-title">Sales</div>
+        <a href="{% url 'sales_dashboard' %}">Sales Dashboard</a>
+        <a href="{% url 'add_sale' %}">New Sale</a>
+        <a href="{% url 'sales_list' %}">Sales List</a>
+        <a href="{% url 'sales_report' %}">Sales Report</a>
+        <a href="{% url 'receipts_list' %}">Receipts</a>
+
+        <div class="menu-title">Finance</div>
         <a href="{% url 'deposit_list' %}">Deposits</a>
         <a href="{% url 'credit_list' %}">Supplier Credit</a>
 
-        <div class="menu-title">Reports</div>
-        <a href="{% url 'reports_home' %}">Reports Center</a>
+        <div class="menu-title">System</div>
+        <a href="{% url 'audit_log' %}">Audit Log</a>
 
-    <!-- STOREKEEPER -->
-    {% elif group and group.name == "Stock" %}
-
-        <a href="{% url 'stock_dashboard' %}">Stock</a>
-        <a href="{% url 'credit_list' %}">Supplier Credit</a>
+    {% elif "stock" in user.groups.all|stringformat:"s"|lower %}
+        <!-- 📦 STOCK USER NAVBAR -->
+        <div class="menu-title">Stock Portal</div>
+        <a href="{% url 'stock_dashboard' %}">Dashboard</a>
+        <a href="{% url 'add_stock' %}">Add Stock</a>
+        <a href="{% url 'stock_list' %}">Stock List</a>
 
         <div class="menu-title">Reports</div>
         <a href="{% url 'stock_report' %}">Stock Report</a>
 
-    <!-- SALES -->
-    {% elif group and group.name == "Sales" %}
-
-        <a href="{% url 'sales_list' %}">Sales</a>
-        <a href="{% url 'add_sale' %}">Add Sale</a>
-        <a href="{% url 'receipts_list' %}">Receipts</a>
+        <div class="menu-title">Finance</div>
         <a href="{% url 'credit_list' %}">Supplier Credit</a>
-        <a href="{% url 'sales_list' %}">Sales List</a>
+
+    {% elif "sales" in user.groups.all|stringformat:"s"|lower %}
+        <!-- 💰 SALES USER NAVBAR -->
+        <div class="menu-title">Sales Portal</div>
+        <a href="{% url 'sales_dashboard' %}">Dashboard</a>
         <a href="{% url 'add_sale' %}">New Sale</a>
-        <a href="{% url 'sales_report' %}">Sales Reports</a>
-        <a href="{% url 'receipts_list' %}">Receipts</a
-
-
+        <a href="{% url 'sales_list' %}">Sales List</a>
 
         <div class="menu-title">Reports</div>
         <a href="{% url 'sales_report' %}">Sales Report</a>
 
+        <div class="menu-title">Finance</div>
+        <a href="{% url 'credit_list' %}">Supplier Credit</a>
+        
+    {% else %}
+        <!-- ⚠️ NO ROLE ASSIGNED FALLBACK -->
+        <div class="menu-title" style="color: #ff8b8b; padding-left: 22px;">No Role Found</div>
+        <p style="padding: 0 22px; font-size: 13px; opacity: 0.6; color: #fff;">Please contact your system admin to set your group permissions.</p>
     {% endif %}
 
-    <!-- COMMON -->
     <div class="menu-title">Account</div>
     <a href="{% url 'logout' %}">Logout</a>
-
-    {% endwith %}
-
 </div>
 
-<!-- MAIN CONTENT -->
+<!-- MAIN -->
 <div class="main">
-
     <div class="topbar">
         <div><b>Nyondo Management System</b></div>
         <div>{{ user.username }}</div>
     </div>
 
-    <div class="container">
-        {% block content %}
-        {% endblock %}
-    </div>
+    <!-- Alert / Messages Banner for Access Violations and Warnings -->
+    {% if messages %}
+        <div style="padding: 10px 25px;">
+            {% for message in messages %}
+                <div style="padding: 10px; margin-bottom: 10px; border-radius: 4px; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
 </div>
 
 </body>

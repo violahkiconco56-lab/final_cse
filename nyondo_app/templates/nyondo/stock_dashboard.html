@@ -2,204 +2,423 @@
 
 {% block content %}
 
-<!-- ================= DASHBOARD WRAPPER ================= -->
-<div class="main-content">
+<div class="dashboard-container">
 
-    <!-- HEADER -->
-    <div class="header">
+    <!-- Header section -->
+    <div class="dashboard-header">
 
-        <h1>Stock Management Dashboard</h1>
+        <div>
+            <h1>Stock Management Dashboard</h1>
+            <p>Monitor inventory levels and stock activities.</p>
+        </div>
 
-        <p>
-            Monitor inventory levels, track stock value, and identify products that need restocking.
-        </p>
+        <div class="header-actions">
+            <a href="{% url 'add_stock' %}" class="primary-btn">
+                + Add Inventory
+            </a>
+        </div>
 
     </div>
 
-    <div class="dashboard-nav">
-        <a href="{% url 'stock_list' %}" class="nav-link">Stock List</a>
-        <a href="{% url 'add_stock' %}" class="nav-link">Add Inventory</a>
-        <a href="{% url 'stock_report' %}" class="nav-link">Stock Reports</a>
-        <a href="{% url 'audit_log' %}" class="nav-link">Audit Log</a>
-        <a href="{% url 'deposit_list' %}" class="nav-link">Deposit Summary</a>
-    </div>
+    <!-- Stats cards -->
+    <div class="stats-grid">
 
-    <!-- ================= KPI CARDS ================= -->
-    <div class="dashboard-cards">
-
-        <div class="card">
+        <div class="stat-card">
             <h3>Total Products</h3>
-            <p>{{ total_products }}</p>
+            <h2>{{ total_products }}</h2>
         </div>
 
-        <div class="card">
-            <h3>Total Items in Stock</h3>
-            <p>{{ total_stock_items }}</p>
+        <div class="stat-card">
+            <h3>Total Items</h3>
+            <h2>{{ total_stock_items }}</h2>
         </div>
 
-        <div class="card">
+        <div class="stat-card">
             <h3>Inventory Value</h3>
-            <p>UGX {{ inventory_value }}</p>
+            <h2>UGX {{ inventory_value }}</h2>
         </div>
 
-        <div class="card">
-            <h3>Total Profit (Est.)</h3>
-            <p>UGX {{ total_profit }}</p>
+        <div class="stat-card">
+            <h3>Estimated Profit</h3>
+            <h2>UGX {{ total_profit }}</h2>
         </div>
 
-        <div class="card">
-            <h3>Low Stock Alerts</h3>
-            <p>{{ low_stock }}</p>
+        <div class="stat-card warning-card">
+            <h3>Low Stock</h3>
+            <h2>{{ low_stock }}</h2>
         </div>
 
-        <div class="card">
+        <div class="stat-card danger-card">
             <h3>Out of Stock</h3>
-            <p>{{ out_of_stock }}</p>
+            <h2>{{ out_of_stock }}</h2>
         </div>
 
     </div>
 
-    <!-- ================= STOCK TABLE ================= -->
-    <div class="section">
+    <!-- Main content layout -->
+    <div class="content-grid">
 
-        <div class="section-box">
+        <!-- Stock table section -->
+        <div class="table-section">
 
-            <h2>All Stock Items</h2>
+            <div class="section-header">
+                <h2>Inventory Overview</h2>
+            </div>
 
-            <table>
+            <div class="table-wrapper">
 
-                <thead>
-                    <tr>
-                        <th>Product</th>
-                        <th>Category</th>
-                        <th>Qty</th>
-                        <th>Buying Price</th>
-                        <th>Selling Price</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
+                <table>
 
-                <tbody>
+                    <!-- Table header -->
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Quantity</th>
+                            <th>Buying</th>
+                            <th>Selling</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
 
-                    {% for product in stock_products %}
+                    <tbody>
 
-                    <tr>
+                        {% for product in stock_products %}
 
-                        <td>{{ product.product_name }}</td>
-                        <td>{{ product.category }}</td>
-                        <td>{{ product.quantity }}</td>
-                        <td>UGX {{ product.buying_price }}</td>
-                        <td>UGX {{ product.selling_price }}</td>
+                        <tr>
 
-                        <!-- STATUS LOGIC -->
-                        <td>
+                            <!-- Product name -->
+                            <td>{{ product.product_name }}</td>
 
-                            {% if product.quantity == 0 %}
-                                <span style="color:red;font-weight:bold;">OUT</span>
+                            <!-- Category -->
+                            <td>
+                                <span class="category-badge">
+                                    {{ product.category }}
+                                </span>
+                            </td>
 
-                            {% elif product.quantity <= product.reorder_level %}
-                                <span style="color:orange;font-weight:bold;">LOW</span>
+                            <!-- Quantity -->
+                            <td>{{ product.quantity }}</td>
 
-                            {% else %}
-                                <span style="color:green;font-weight:bold;">OK</span>
-                            {% endif %}
+                            <!-- Buying price -->
+                            <td>UGX {{ product.buying_price }}</td>
 
-                        </td>
+                            <!-- Selling price -->
+                            <td>UGX {{ product.selling_price }}</td>
 
-                    </tr>
+                            <!-- Stock status -->
+                            <td>
 
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="empty">
-                            No stock available yet. <a href="{% url 'add_stock' %}">Add a new stock item</a> to get started.
-                        </td>
-                    </tr>
-                    {% endfor %}
+                                {% if product.quantity == 0 %}
+                                    <span class="status out">OUT</span>
 
-                </tbody>
+                                {% elif product.quantity <= product.reorder_level %}
+                                    <span class="status low">LOW</span>
 
-            </table>
+                                {% else %}
+                                    <span class="status ok">OK</span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% empty %}
+
+                        <!-- Empty state -->
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <h3>No Stock Available</h3>
+                                    <p>Start adding inventory items.</p>
+
+                                    <a href="{% url 'add_stock' %}" class="primary-btn">
+                                        Add Stock
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
 
         </div>
 
-        <!-- ================= LOW STOCK PANEL ================= -->
-        <div class="section-box">
+        <!-- Side panel -->
+        <div class="side-panel">
 
-            <h2>Low Stock Alerts</h2>
+            <!-- Low stock alerts -->
+            <div class="panel-card">
 
-            <table>
+                <div class="section-header">
+                    <h2>Low Stock Alerts</h2>
+                </div>
 
-                <thead>
-                    <tr>
-                        <th>Product</th>
-                        <th>Qty Left</th>
-                        <th>Reorder Level</th>
-                    </tr>
-                </thead>
-
-                <tbody>
+                <div class="alerts-container">
 
                     {% for item in stock_products %}
 
                         {% if item.quantity <= item.reorder_level %}
 
-                        <tr>
-                            <td>{{ item.product_name }}</td>
-                            <td>{{ item.quantity }}</td>
-                            <td>{{ item.reorder_level }}</td>
-                        </tr>
+                        <div class="alert-item">
+
+                            <div>
+                                <strong>{{ item.product_name }}</strong>
+                                <p>{{ item.quantity }} left</p>
+                            </div>
+
+                            <span class="alert-badge">
+                                Reorder {{ item.reorder_level }}
+                            </span>
+
+                        </div>
 
                         {% endif %}
 
+                    {% empty %}
+
+                        <p>No low stock alerts.</p>
+
                     {% endfor %}
 
-                </tbody>
+                </div>
 
-            </table>
+            </div>
+
+            <!-- Insight box -->
+            <div class="insight-card">
+
+                <h3>Business Insight</h3>
+
+                <p>
+                    Products below reorder level should be restocked immediately to avoid shortages.
+                </p>
+
+            </div>
 
         </div>
 
     </div>
 
-    <!-- ================= BUSINESS NOTE ================= -->
-    <div class="warning">
-
-        <strong>System Insight:</strong>
-
-        Products at or below reorder level should be restocked immediately
-        to prevent sales interruption and stockouts.
-
-    </div>
-
 </div>
 
+<!-- Styling -->
 <style>
-    .dashboard-nav {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin: 20px 0;
+
+    /* Page background */
+    .dashboard-container {
+        padding: 14px;
+        background: #f7f5fb;
     }
 
-    .nav-link {
-        display: inline-block;
-        padding: 12px 18px;
-        background: #5a4b8a;
+    /* Header */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .dashboard-header h1 {
+        font-size: 22px;
+        color: #2f1f45;
+        margin-bottom: 4px;
+    }
+
+    .dashboard-header p {
+        font-size: 13px;
+        color: #6d5d88;
+    }
+
+    /* Button */
+    .primary-btn {
+        background: #6a4bbd;
         color: white;
+        padding: 8px 12px;
         border-radius: 8px;
         text-decoration: none;
+        font-size: 13px;
         font-weight: 600;
+        transition: 0.2s;
+        display: inline-block;
     }
 
-    .nav-link:hover {
-        background: #483671;
+    .primary-btn:hover {
+        background: #54379b;
     }
 
-    .empty {
-        text-align: center;
-        padding: 18px;
-        color: #555;
+    /* Stats grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
     }
+
+    .stat-card {
+        background: white;
+        padding: 12px 14px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        position: relative;
+    }
+
+    .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 3px;
+        width: 100%;
+        background: #6a4bbd;
+    }
+
+    .warning-card::before {
+        background: orange;
+    }
+
+    .danger-card::before {
+        background: red;
+    }
+
+    .stat-card h3 {
+        font-size: 11px;
+        color: #6d5d88;
+        margin-bottom: 4px;
+    }
+
+    .stat-card h2 {
+        font-size: 17px;
+        color: #2f1f45;
+    }
+
+    /* Layout */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 14px;
+    }
+
+    @media (max-width: 900px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Cards */
+    .table-section,
+    .panel-card,
+    .insight-card {
+        background: white;
+        padding: 14px;
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    /* Table */
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    thead {
+        background: #f3f0fb;
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: left;
+    }
+
+    td {
+        border-bottom: 1px solid #eee;
+    }
+
+    tr:hover {
+        background: #faf8ff;
+    }
+
+    /* Badges */
+    .category-badge {
+        background: #eee8ff;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 11px;
+        color: #5a4b8a;
+    }
+
+    .status {
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: bold;
+    }
+
+    .status.ok {
+        background: #e8f5ee;
+        color: green;
+    }
+
+    .status.low {
+        background: #fff3e0;
+        color: orange;
+    }
+
+    .status.out {
+        background: #ffe8e8;
+        color: red;
+    }
+
+    /* Alerts */
+    .alerts-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .alert-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border-left: 3px solid orange;
+        background: #faf8ff;
+        border-radius: 10px;
+        font-size: 13px;
+    }
+
+    .alert-badge {
+        background: orange;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+    }
+
+    /* Insight */
+    .insight-card {
+        margin-top: 10px;
+        background: linear-gradient(135deg, #6a4bbd, #3f2b7a);
+        color: white;
+    }
+
+    .insight-card p {
+        font-size: 13px;
+        color: #e6e0ff;
+    }
+
 </style>
 
 {% endblock %}

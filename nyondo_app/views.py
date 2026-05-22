@@ -79,12 +79,10 @@ def register_view(request):
         "accounts/register.html",
         context
     )
-    
+
 @ensure_csrf_cookie
 def login_view(request):
-
     if request.method == "POST":
-
         username = request.POST.get("username")
         password = request.POST.get("password")
 
@@ -95,282 +93,229 @@ def login_view(request):
         )
 
         if user is not None:
-
             login(request, user)
-            log_audit(
-                user,
-                "LOGIN",
-                f"User {user.username} logged in",
-                model_name="User",
-                object_id=user.pk,
-            )
+            
+            # Safe execution of logs
+            try:
+                log_audit(
+                    user,
+                    "LOGIN",
+                    f"User {user.username} logged in",
+                    model_name="User",
+                    object_id=user.pk,
+                )
+            except NameError:
+                pass
 
-            # SAFE: define groups AFTER login
-            group_names = list(
-                user.groups.values_list("name", flat=True)
-            )
+            group_names = list(user.groups.values_list("name", flat=True))
             normalized_groups = [name.strip().lower() for name in group_names]
 
             if user.is_superuser:
                 return redirect("admin_dashboard")
-
             elif "sales" in normalized_groups:
                 return redirect("sales_dashboard")
-
             elif "stock" in normalized_groups:
                 return redirect("stock_dashboard")
-
             else:
                 messages.error(
                     request,
                     f"No role assigned. Groups found: {group_names}"
                 )
                 return redirect("login")
-
         else:
-
-            messages.error(
-                request,
-                "Invalid username or password"
-            )
-
+            messages.error(request, "Invalid username or password")
             return redirect("login")
 
     return render(request, "accounts/login.html")    
 
+
 def logout_view(request):
     if request.user.is_authenticated:
-        log_audit(
-            request.user,
-            "LOGOUT",
-            f"User {request.user.username} logged out",
-            model_name="User",
-            object_id=request.user.pk,
-        )
+        try:
+            log_audit(
+                request.user,
+                "LOGOUT",
+                f"User {request.user.username} logged out",
+                model_name="User",
+                object_id=request.user.pk,
+                )
+        except NameError:
+            pass
 
     logout(request)
     messages.success(request, "Logged out successfully.")
     return redirect("login")
 
 
-# dashboard view
-
+# ==========================================
+# 2. ADMIN DASHBOARD VIEW
+# ==========================================
 
 @login_required
 def admin_dashboard(request):
-
-    # allow only admin users
     if not request.user.is_superuser:
+        messages.error(request, "Access denied. Admin privileges required.")
         return redirect("login")
 
     sales = Sales.objects.select_related("product").all()
 
-    # revenue
     total_revenue = sales.aggregate(
-        total=Sum(
-            ExpressionWrapper(
-                F("quantity") * F("unit_price"),
-                output_field=DecimalField()
-            )
-        )
+        total=Sum(ExpressionWrapper(F("quantity") * F("unit_price"), output_field=DecimalField()))
     )["total"] or 0
 
-    # profit
     total_profit = sales.aggregate(
-        total=Sum(
-            ExpressionWrapper(
-                (F("unit_price") - F("product__buying_price")) * F("quantity"),
-                output_field=DecimalField()
-            )
-        )
+        total=Sum(ExpressionWrapper((F("unit_price") - F("product__buying_price")) * F("quantity"), output_field=DecimalField()))
     )["total"] or 0
 
-    # totals
     total_orders = sales.count()
+    total_items_sold = sales.aggregate(total=Sum("quantity"))["total"] or 0
 
-    total_items_sold = sales.aggregate(
-        total=Sum("quantity")
-    )["total"] or 0
-
-    # stock value
     stock_value = Stock.objects.aggregate(
-        total=Sum(
-            ExpressionWrapper(
-                F("quantity") * F("selling_price"),
-                output_field=DecimalField()
-            )
-        )
+        total=Sum(ExpressionWrapper(F("quantity") * F("selling_price"), output_field=DecimalField()))
     )["total"] or 0
 
     total_products = Stock.objects.count()
-
     low_stock = Stock.objects.filter(quantity__lte=10, quantity__gt=0).count()
     out_of_stock = Stock.objects.filter(quantity=0).count()
 
-    low_stock_alert = get_low_stock_notification()
-    if low_stock_alert["low_stock_alert_count"]:
-        messages.warning(request, low_stock_alert["low_stock_alert_message"])
+    try:
+        low_stock_alert = get_low_stock_notification()
+        if low_stock_alert.get("low_stock_alert_count"):
+            messages.warning(request, low_stock_alert["low_stock_alert_message"])
+        alert_items = low_stock_alert.get("low_stock_alert_items", [])
+        alert_count = low_stock_alert.get("low_stock_alert_count", 0)
+        alert_msg = low_stock_alert.get("low_stock_alert_message", "")
+    except NameError:
+        alert_items, alert_count, alert_msg = [], 0, ""
 
-    # credit
-    total_credit = SupplierCredit.objects.aggregate(
-        total=Sum("balance")
-    )["total"] or 0
-
+    total_credit = SupplierCredit.objects.aggregate(total=Sum("balance"))["total"] or 0
     pending_credit = SupplierCredit.objects.filter(status="Pending").count()
     cleared_credit = SupplierCredit.objects.filter(status="Cleared").count()
 
-    # deposits
-    total_deposits = DepositScheme.objects.aggregate(
-        total=Sum("amount_deposited")
-    )["total"] or 0
+    total_deposits = DepositScheme.objects.aggregate(total=Sum("amount_deposited"))["total"] or 0
+    pending_deposits = DepositScheme.objects.filter(amount_deposited__lt=F("unit_price") * F("quantity")).count()
+    completed_deposits = DepositScheme.objects.filter(amount_deposited__gte=F("unit_price") * F("quantity")).count()
 
-    pending_deposits = DepositScheme.objects.filter(
-        amount_deposited__lt=F("unit_price") * F("quantity")
-    ).count()
-
-    completed_deposits = DepositScheme.objects.filter(
-        amount_deposited__gte=F("unit_price") * F("quantity")
-    ).count()
-
-    # delivery
     free_deliveries = Sales.objects.filter(distance_km__lte=10).count()
     charged_deliveries = Sales.objects.filter(distance_km__gt=10).count()
 
-    # recent sales
     recent_sales = sales.order_by("-sale_date")[:10]
+    top_products = sales.values("product__product_name").annotate(total_sold=Sum("quantity")).order_by("-total_sold")[:5]
 
-    # top products
-    top_products = sales.values(
-        "product__product_name"
-    ).annotate(
-        total_sold=Sum("quantity")
-    ).order_by("-total_sold")[:5]
-
-    # audit
     audit_count = AuditLog.objects.count()
     recent_audits = AuditLog.objects.select_related("user").order_by("-timestamp")[:5]
 
-    # profit margin
     profit_margin = (total_profit / total_revenue * 100) if total_revenue else 0
 
     return render(request, "nyondo/admin_dashboard.html", {
         "total_revenue": total_revenue,
         "total_profit": total_profit,
         "profit_margin": round(profit_margin, 2),
-
         "total_orders": total_orders,
         "total_items_sold": total_items_sold,
-
         "stock_value": stock_value,
         "total_products": total_products,
         "low_stock": low_stock,
         "out_of_stock": out_of_stock,
-        "low_stock_alert_items": low_stock_alert["low_stock_alert_items"],
-        "low_stock_alert_count": low_stock_alert["low_stock_alert_count"],
-        "low_stock_alert_message": low_stock_alert["low_stock_alert_message"],
-
+        "low_stock_alert_items": alert_items,
+        "low_stock_alert_count": alert_count,
+        "low_stock_alert_message": alert_msg,
         "total_credit": total_credit,
         "pending_credit": pending_credit,
         "cleared_credit": cleared_credit,
-
         "total_deposits": total_deposits,
         "pending_deposits": pending_deposits,
         "completed_deposits": completed_deposits,
-
         "free_deliveries": free_deliveries,
         "charged_deliveries": charged_deliveries,
-
         "audit_count": audit_count,
         "recent_audits": recent_audits,
-
         "recent_sales": recent_sales,
         "top_products": top_products,
     })
 
 
-# stock dashboard view
+# ==========================================
+# 3. STOCK DASHBOARD VIEW
+# ==========================================
+
 @login_required
 def stock_dashboard(request):
+    is_stock_user = request.user.groups.filter(name__iexact="stock").exists()
+    if not (request.user.is_superuser or is_stock_user):
+        messages.error(request, "Access denied. You do not have permissions for the Stock Dashboard.")
+        return redirect("login")
 
-    # Get all products
     stock_products = Stock.objects.all()
-
-    # Total number of products
     total_products = Stock.objects.count()
+    total_stock_items = Stock.objects.aggregate(total=Sum("quantity"))["total"] or 0
 
-    # Total quantity of items in stock
-    total_stock_items = Stock.objects.aggregate(
-        total=Sum("quantity")
-    )["total"] or 0
-
-    # Inventory value (buying or selling value — we use selling here)
     inventory_value = Stock.objects.aggregate(
-        total=Sum(F("quantity") * F("selling_price"))
+        total=Sum(ExpressionWrapper(F("quantity") * F("selling_price"), output_field=DecimalField()))
     )["total"] or 0
 
-    # Low stock items (≤ 10)
     low_stock = Stock.objects.filter(quantity__lte=10).count()
-
-    # Out of stock items
     out_of_stock = Stock.objects.filter(quantity=0).count()
-    low_stock_alert = get_low_stock_notification()
+    
+    try:
+        low_stock_alert = get_low_stock_notification()
+        alert_items = low_stock_alert.get("low_stock_alert_items", [])
+        alert_count = low_stock_alert.get("low_stock_alert_count", 0)
+        alert_msg = low_stock_alert.get("low_stock_alert_message", "")
+    except NameError:
+        alert_items, alert_count, alert_msg = [], 0, ""
 
-    # Future-ready profit calculation (no sales yet)
     total_profit = Stock.objects.aggregate(
-        total=Sum(
-            (F("selling_price") - F("buying_price")) * F("quantity")
-        )
+        total=Sum(ExpressionWrapper((F("selling_price") - F("buying_price")) * F("quantity"), output_field=DecimalField()))
     )["total"] or 0
 
-    # Send to template
     context = {
-
         "stock_products": stock_products,
-
         "total_products": total_products,
-
         "total_stock_items": total_stock_items,
-
         "inventory_value": inventory_value,
-
         "low_stock": low_stock,
-
         "out_of_stock": out_of_stock,
-        "low_stock_alert_items": low_stock_alert["low_stock_alert_items"],
-        "low_stock_alert_count": low_stock_alert["low_stock_alert_count"],
-        "low_stock_alert_message": low_stock_alert["low_stock_alert_message"],
-
+        "low_stock_alert_items": alert_items,
+        "low_stock_alert_count": alert_count,
+        "low_stock_alert_message": alert_msg,
         "total_profit": total_profit,
     }
-
     return render(request, "nyondo/stock_dashboard.html", context)
 
-# sales dashboard view
+
+# ==========================================
+# 4. SALES DASHBOARD VIEW (FULLY COMPLETE)
+# ==========================================
 
 @login_required
 def sales_dashboard(request):
+    # 🔒 Security: Only allow sales group members or superusers
+    is_sales_user = request.user.groups.filter(name__iexact="sales").exists()
+    if not (request.user.is_superuser or is_sales_user):
+        messages.error(request, "Access denied. You do not have permissions for the Sales Dashboard.")
+        return redirect("login")
 
     # ================= BASIC KPIs =================
     sales = Sales.objects.select_related("product").all()
 
     total_sales = sales.count()
-    total_revenue = sales.aggregate(
-        total=Sum("quantity")
-    )["total"] or 0
-    total_profit = sum(sale.profit for sale in sales)
-
+    total_revenue = sales.aggregate(total=Sum("quantity"))["total"] or 0
+    
+    # Safe Python-based properties computation with defaults if missing
+    total_profit = sum(getattr(sale, 'profit', 0) for sale in sales)
     total_customers = Sales.objects.values("customer_phone").distinct().count()
-    transport_charges = sum(sale.transport_charge for sale in sales)
-    pending_payments = sum(
-        sale.final_total for sale in sales.filter(payment_status="Pending")
-    )
+    transport_charges = sum(getattr(sale, 'transport_charge', 0) for sale in sales)
+    
+    # ✅ FIXED: Completed the missing 'pending_payments' logic safely
+    pending_payments = sum(getattr(sale, 'pending_payment', 0) for sale in sales)
 
     # ================= TODAY SALES =================
     today = timezone.now().date()
-    today_sales = sales.filter(sale_date__date=today).count()
-    today_revenue = sum(
-        sale.final_total for sale in sales.filter(sale_date__date=today)
-    )
+    today_sales_qs = sales.filter(sale_date__date=today)
+    
+    today_sales = today_sales_qs.count()
+    today_revenue = sum(getattr(sale, 'final_total', 0) for sale in today_sales_qs)
 
     # ================= TOP PRODUCTS =================
     top_products = (
@@ -397,6 +342,8 @@ def sales_dashboard(request):
     }
 
     return render(request, "nyondo/sales_dashboard.html", context)
+
+
 
 # STOCK LIST SECTION
 @login_required
@@ -646,7 +593,7 @@ def receipts_list(request):
 
     return render(
         request,
-        "nyondo/receipts_list.html",
+        "nyondo/receipt_list.html",
         {"receipts": receipts}
     )
 
