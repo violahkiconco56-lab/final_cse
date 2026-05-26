@@ -36,6 +36,11 @@ body{
             font-weight: bold;
         }
 
+        .voided{
+            color: #dc3545;
+            font-weight: bold;
+        }
+
         /* PRINT RULE */
         @media print {
             .no-print {
@@ -56,4 +61,22 @@ body{
             color: white;
             text-decoration: none;
             border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.2s ease;
+        }
+
+        .btn-back{
+            background: #343a40;
+        }
+
+        .btn-back:hover{
+            background: #23272b;
+        }
+
+        .btn-print{
+            background: #28a745;
+        }
+
+        .btn-print:hover{
+            background: #218838;
         }

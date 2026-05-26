@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib import messages
 from django.db.models import DecimalField, ExpressionWrapper, Sum, F, Q, Count
+from django.core.exceptions import ValidationError
 
 
 def log_audit(user, action, description, model_name=None, object_id=None):
@@ -157,7 +158,7 @@ def admin_dashboard(request):
         messages.error(request, "Access denied. Admin privileges required.")
         return redirect("login")
 
-    sales = Sales.objects.select_related("product").all()
+    sales = Sales.objects.select_related("product").filter(is_voided=False)
 
     total_revenue = sales.aggregate(
         total=Sum(ExpressionWrapper(F("quantity") * F("unit_price"), output_field=DecimalField()))
@@ -196,8 +197,8 @@ def admin_dashboard(request):
     pending_deposits = DepositScheme.objects.filter(amount_deposited__lt=F("unit_price") * F("quantity")).count()
     completed_deposits = DepositScheme.objects.filter(amount_deposited__gte=F("unit_price") * F("quantity")).count()
 
-    free_deliveries = Sales.objects.filter(distance_km__lte=10).count()
-    charged_deliveries = Sales.objects.filter(distance_km__gt=10).count()
+    free_deliveries = Sales.objects.filter(is_voided=False, distance_km__lte=10).count()
+    charged_deliveries = Sales.objects.filter(is_voided=False, distance_km__gt=10).count()
 
     recent_sales = sales.order_by("-sale_date")[:10]
     top_products = sales.values("product__product_name").annotate(total_sold=Sum("quantity")).order_by("-total_sold")[:5]
@@ -297,14 +298,14 @@ def sales_dashboard(request):
         return redirect("login")
 
     # ================= BASIC KPIs =================
-    sales = Sales.objects.select_related("product").all()
+    sales = Sales.objects.select_related("product").filter(is_voided=False)
 
     total_sales = sales.count()
-    total_revenue = sales.aggregate(total=Sum("quantity"))["total"] or 0
+    total_revenue = sum(sale.final_total for sale in sales)
     
     # Safe Python-based properties computation with defaults if missing
     total_profit = sum(getattr(sale, 'profit', 0) for sale in sales)
-    total_customers = Sales.objects.values("customer_phone").distinct().count()
+    total_customers = sales.values("customer_phone").distinct().count()
     transport_charges = sum(getattr(sale, 'transport_charge', 0) for sale in sales)
     
     # ✅ FIXED: Completed the missing 'pending_payments' logic safely
@@ -319,7 +320,7 @@ def sales_dashboard(request):
 
     # ================= TOP PRODUCTS =================
     top_products = (
-        Sales.objects.values(product_name=F("product__product_name"))
+        sales.values(product_name=F("product__product_name"))
         .annotate(units_sold=Sum("quantity"))
         .order_by("-units_sold")[:5]
     )
@@ -560,6 +561,10 @@ def add_sale(request):
 def edit_sale(request, sale_id):
 
     sale = get_object_or_404(Sales, id=sale_id)
+    if sale.is_voided:
+        messages.error(request, "Voided sales cannot be edited.")
+        return redirect("sales_list")
+
     form = SaleForm(instance=sale)
 
     if request.method == "POST":
@@ -622,6 +627,9 @@ def receipt_print(request, sale_id):
 # DELETE SALE
 @login_required
 def delete_sale(request, sale_id):
+    if not request.user.is_superuser:
+        messages.error(request, "Only an admin can remove a sale record.")
+        return redirect("sales_list")
 
     sale = get_object_or_404(Sales, id=sale_id)
 
@@ -640,11 +648,50 @@ def delete_sale(request, sale_id):
 
     return render(
         request,
-        "nyondo/delete_sale.html",
+        "nyondo/delete_sales.html",
         {
             "sale": sale
         }
     )
+
+
+# VOID SALE
+@login_required
+def void_sale(request, sale_id):
+    if not request.user.is_superuser:
+        messages.error(request, "Only an admin can void a sale.")
+        return redirect("sales_list")
+
+    sale = get_object_or_404(Sales.objects.select_related("product", "voided_by"), id=sale_id)
+
+    if sale.is_voided:
+        messages.info(request, f"Sale {sale.receipt_no} has already been voided.")
+        return redirect("sales_list")
+
+    if request.method == "POST":
+        reason = request.POST.get("reason", "")
+
+        try:
+            sale.void(request.user, reason)
+        except ValidationError as error:
+            messages.error(request, "; ".join(error.messages))
+            return redirect("sales_list")
+
+        log_audit(
+            request.user,
+            "VOID",
+            f"Voided sale {sale.receipt_no} for {sale.customer_name}. Reason: {reason or 'No reason provided'}",
+            model_name="Sales",
+            object_id=sale.pk,
+        )
+
+        messages.success(
+            request,
+            f"Sale {sale.receipt_no} voided successfully and stock was returned."
+        )
+        return redirect("sales_list")
+
+    return render(request, "nyondo/void_sale.html", {"sale": sale})
 
 # LIST ALL SUPPLIER CREDITS
 @login_required
@@ -927,16 +974,17 @@ def delete_deposit(request, pk):
 # REPORTS VIEW
 @login_required
 def sales_report(request):
-    sales = Sales.objects.select_related("product").order_by("-sale_date")
+    sales = Sales.objects.select_related("product").filter(is_voided=False).order_by("-sale_date")
 
     # Totals calculated in Python
-    total_revenue = sum((sale.quantity * sale.unit_price) + getattr(sale, "transport_charge", 0) for sale in sales)
-    total_profit = sum((sale.unit_price - sale.product.buying_price) * sale.quantity for sale in sales)
+    total_revenue = sum(sale.final_total for sale in sales)
+    total_profit = sum(sale.profit for sale in sales)
     sales_count = sales.count()
 
     context = {
         "sales": sales,
         "sales_count": sales_count,
+        "total_sales": total_revenue,
         "total_revenue": total_revenue,
         "total_profit": total_profit,
     }
@@ -974,7 +1022,7 @@ def stock_report(request):
 # PROFIT REPORT
 @login_required
 def profit_report(request):
-    sales = Sales.objects.select_related("product").order_by("-sale_date")
+    sales = Sales.objects.select_related("product").filter(is_voided=False).order_by("-sale_date")
 
     total_revenue = sum((sale.quantity * sale.unit_price) + getattr(sale, "transport_charge", 0) for sale in sales)
     total_profit = sum((sale.unit_price - sale.product.buying_price) * sale.quantity for sale in sales)
@@ -983,7 +1031,7 @@ def profit_report(request):
 
     # Top products by profit
     top_products = (
-        Sales.objects.values("product__product_name")
+        Sales.objects.filter(is_voided=False).values("product__product_name")
         .annotate(
             total_profit=Sum(
                 ExpressionWrapper(
@@ -1004,7 +1052,7 @@ def profit_report(request):
 
     # Monthly profit
     monthly_profit = (
-        Sales.objects.annotate(month=TruncMonth("sale_date"))
+        Sales.objects.filter(is_voided=False).annotate(month=TruncMonth("sale_date"))
         .values("month")
         .annotate(
             revenue=Sum(

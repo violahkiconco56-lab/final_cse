@@ -57,11 +57,22 @@
     <hr>
 
     <p class="center">
-        Status: {{ receipt.payment_status }}
+        Status: {% if receipt.is_voided %}VOIDED{% else %}{{ receipt.payment_status }}{% endif %}
     </p>
 
-    <!-- PRINT BUTTON -->
-    <a href="#" onclick="window.print()" class="btn no-print">
+    {% if receipt.is_voided and receipt.void_reason %}
+        <p class="center">Reason: {{ receipt.void_reason }}</p>
+    {% endif %}
+
+    <a href="{% url 'sale_receipt' receipt.id %}" class="btn btn-back no-print">
+        Back to Receipt
+    </a>
+
+    <a href="{% url 'receipts_list' %}" class="btn btn-back no-print">
+        Back to Receipts
+    </a>
+
+    <a href="#" onclick="window.print()" class="btn btn-print no-print">
         Print Receipt
     </a>
 

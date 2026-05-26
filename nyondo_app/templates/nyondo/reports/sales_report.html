@@ -9,16 +9,20 @@
     <div class="report-header">
         <h1>Sales Report</h1>
 
-        <button onclick="window.print()" class="print-btn">
-            Print Report
-        </button>
+        <div class="report-actions">
+            <a href="{% url 'sales_dashboard' %}" class="back-btn">Back to Dashboard</a>
+            <a href="{% url 'sales_list' %}" class="back-btn">Back to Sales List</a>
+            <button onclick="window.print()" class="print-btn">
+                Print Report
+            </button>
+        </div>
     </div>
 
     <div class="summary">
 
         <div class="summary-card">
             <h3>Total Sales</h3>
-            <h2>UGX {{ total_sales|floatformat:0|intcomma }}</h2>
+            <h2>UGX {{ total_revenue|floatformat:0|intcomma }}</h2>
         </div>
 
         <div class="summary-card">
@@ -62,7 +66,7 @@
 
             {% endfor %}
 
-        </tbody>
+        </tbody>c
 
     </table>
 

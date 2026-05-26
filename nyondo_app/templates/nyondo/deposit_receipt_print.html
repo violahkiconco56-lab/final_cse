@@ -62,7 +62,15 @@
         Status: {{ deposit.status }}
     </p>
 
-    <a href="#" onclick="window.print()" class="btn no-print">
+    <a href="{% url 'deposit_list' %}" class="btn btn-back no-print">
+        Back to Deposits
+    </a>
+
+    <a href="{% url 'deposit_receipt' deposit.id %}" class="btn btn-back no-print">
+        Back to Receipt
+    </a>
+
+    <a href="#" onclick="window.print()" class="btn btn-print no-print">
         Print Receipt
     </a>
 

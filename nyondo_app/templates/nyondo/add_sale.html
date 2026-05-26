@@ -4,7 +4,9 @@
 
 <div class="form-container">
 
-    <h2>Add New Sale</h2>
+    <div class="form-header">
+        <h2>Add New Sale</h2>
+    </div>
 
     {% if messages %}
         {% for message in messages %}
@@ -63,7 +65,10 @@
 
         </div>
 
-        <button type="submit" class="btn-save">Save Sale</button>
+        <div class="buttons">
+            <button type="submit" class="btn-save">Save Sale</button>
+            <a href="{% url 'sales_list' %}" class="btn-back">Back to Sales List</a>
+        </div>
 
     </form>
 

@@ -12,6 +12,14 @@ body{
             border-radius: 10px;
         }
 
+        .page-header{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
         table{
             width: 100%;
             border-collapse: collapse;
@@ -27,12 +35,44 @@ body{
         }
 
         .btn{
-            padding: 6px 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 8px 12px;
             text-decoration: none;
             border-radius: 5px;
             color: white;
             font-size: 13px;
+            font-weight: bold;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .btn:hover{
+            transform: translateY(-1px);
         }
 
         .view{ background: #007bff; }
         .print{ background: #28a745; }
+        .btn-back{ background: #343a40; }
+        .btn-back:hover{ background: #23272b; }
+
+        .status-badge{
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 14px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-badge.voided{
+            background: #6c757d;
+        }
+
+        @media(max-width: 700px){
+            .page-header{
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }

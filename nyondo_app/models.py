@@ -127,6 +127,16 @@ class Sales(models.Model):
     sale_date = models.DateTimeField(auto_now_add=True)
 
     receipt_no = models.CharField(max_length=20, unique=True, blank=True, editable=False)
+    is_voided = models.BooleanField(default=False)
+    void_reason = models.TextField(blank=True)
+    voided_at = models.DateTimeField(blank=True, null=True)
+    voided_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="voided_sales",
+    )
 
     # BUSINESS LOGIC
 
@@ -146,7 +156,38 @@ class Sales(models.Model):
 
     @property
     def profit(self):
+        if self.is_voided:
+            return 0
         return (self.unit_price - self.product.buying_price) * self.quantity
+
+    def void(self, user, reason=""):
+        if self.is_voided:
+            raise ValidationError("This sale has already been voided.")
+
+        with transaction.atomic():
+            sale = Sales.objects.select_for_update().select_related("product").get(pk=self.pk)
+
+            if sale.is_voided:
+                raise ValidationError("This sale has already been voided.")
+
+            product = sale.product
+            product.quantity += sale.quantity
+            product.save()
+
+            sale.is_voided = True
+            sale.void_reason = (reason or "").strip()
+            sale.voided_by = user
+            from django.utils import timezone
+
+            sale.voided_at = timezone.now()
+            sale.save(
+                update_fields=[
+                    "is_voided",
+                    "void_reason",
+                    "voided_by",
+                    "voided_at",
+                ]
+            )
 
     # VALIDATION
 
@@ -231,9 +272,10 @@ class Sales(models.Model):
 
     def delete(self, *args, **kwargs):
         with transaction.atomic():
-            product = self.product
-            product.quantity += self.quantity
-            product.save()
+            if not self.is_voided:
+                product = self.product
+                product.quantity += self.quantity
+                product.save()
             super().delete(*args, **kwargs)
 
     def __str__(self):
@@ -449,6 +491,7 @@ class AuditLog(models.Model):
         ("STOCK", "Stock"),
         ("CREDIT", "Credit"),
         ("DEPOSIT", "Deposit"),
+        ("VOID", "Void"),
     ]
 
     user = models.ForeignKey(

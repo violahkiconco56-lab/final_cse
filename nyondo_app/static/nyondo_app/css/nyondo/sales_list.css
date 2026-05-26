@@ -102,6 +102,20 @@ th{
     background:#b39ddb;
 }
 
+.voided{
+    background:#6c757d;
+}
+
+.voided-row{
+    background:#f8f9fa;
+    color:#6c757d;
+}
+
+.voided-row .highlight{
+    color:#6c757d;
+    text-decoration:line-through;
+}
+
 /* FIXED ACTION BUTTONS (IMPORTANT FIX) */
 .actions-btns{
     display:flex;
@@ -143,6 +157,14 @@ th{
 
 .btn-edit:hover{
     background:#6b5aa6;
+}
+
+.btn-void{
+    background:#dc3545;
+}
+
+.btn-void:hover{
+    background:#bb2d3b;
 }
 
 .btn-delete{

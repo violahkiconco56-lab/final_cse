@@ -11,7 +11,10 @@
 
 <div class="container">
 
-    <h2>Receipts History</h2>
+    <div class="page-header">
+        <h2>Receipts History</h2>
+        <a href="{% url 'sales_dashboard' %}" class="btn btn-back">Back to Dashboard</a>
+    </div>
 
     <table>
         <tr>
@@ -30,7 +33,13 @@
             <td>{{ r.customer_name }}</td>
             <td>{{ r.product.product_name }}</td>
             <td>{{ r.final_total }}</td>
-            <td>{{ r.payment_status }}</td>
+            <td>
+                {% if r.is_voided %}
+                    <span class="status-badge voided">Voided</span>
+                {% else %}
+                    {{ r.payment_status }}
+                {% endif %}
+            </td>
             <td>
                 <a href="{% url 'receipt_detail' r.id %}" class="btn view">View</a>
                 <a href="{% url 'receipt_print' r.id %}" class="btn print">Print</a>

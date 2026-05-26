@@ -64,17 +64,37 @@ body{
 
         .paid{ color: green; }
         .pending{ color: orange; }
+        .voided{ color: #dc3545; }
 
         .btn{
             display: inline-block;
             margin-top: 20px;
+            margin-right: 8px;
             padding: 10px 15px;
             background: #007bff;
             color: white;
             text-decoration: none;
             border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .btn:hover{
+            transform: translateY(-1px);
+        }
+
+        .btn-back{
+            background: #343a40;
+        }
+
+        .btn-back:hover{
+            background: #23272b;
         }
 
         .btn-print{
             background: #28a745;
+        }
+
+        .btn-print:hover{
+            background: #218838;
         }

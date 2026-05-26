@@ -1,0 +1,36 @@
+{% extends "nyondo/base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="void-container">
+    <h2>Void Sale</h2>
+
+    <div class="warning-box">
+        This will mark the sale as voided and return {{ sale.quantity }} item{{ sale.quantity|pluralize }} to stock.
+    </div>
+
+    <div class="sale-info">
+        <p><strong>Receipt No:</strong> {{ sale.receipt_no }}</p>
+        <p><strong>Customer:</strong> {{ sale.customer_name }}</p>
+        <p><strong>Product:</strong> {{ sale.product.product_name }}</p>
+        <p><strong>Quantity:</strong> {{ sale.quantity }}</p>
+        <p><strong>Total:</strong> {{ sale.final_total }}</p>
+        <p><strong>Date:</strong> {{ sale.sale_date }}</p>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label for="reason">Reason for voiding</label>
+        <textarea id="reason" name="reason" rows="4" placeholder="Example: wrong product selected, duplicate sale, wrong quantity"></textarea>
+
+        <div class="buttons">
+            <a href="{% url 'sales_list' %}" class="btn-cancel">Back to Sales List</a>
+            <button type="submit" class="btn-void">Void Sale</button>
+        </div>
+    </form>
+</div>
+
+<link rel="stylesheet" href="{% static 'nyondo_app/css/nyondo/void_sale.css' %}">
+
+{% endblock %}

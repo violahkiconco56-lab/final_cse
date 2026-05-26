@@ -47,16 +47,27 @@
 
         <h3 class="status">
             Status:
-            {% if receipt.payment_status == "Paid" %}
+            {% if receipt.is_voided %}
+                <span class="voided">VOIDED</span>
+            {% elif receipt.payment_status == "Paid" %}
                 <span class="paid">PAID</span>
             {% else %}
                 <span class="pending">PENDING</span>
             {% endif %}
         </h3>
+
+        {% if receipt.is_voided %}
+            <p><strong>Voided By:</strong> {{ receipt.voided_by|default:"Admin" }}</p>
+            <p><strong>Voided At:</strong> {{ receipt.voided_at }}</p>
+            {% if receipt.void_reason %}
+                <p><strong>Reason:</strong> {{ receipt.void_reason }}</p>
+            {% endif %}
+        {% endif %}
     </div>
 
     <!-- BUTTONS -->
-    <a href="{% url 'receipts_list' %}" class="btn">Back</a>
+    <a href="{% url 'receipts_list' %}" class="btn btn-back">Back to Receipts</a>
+    <a href="{% url 'sales_list' %}" class="btn btn-back">Back to Sales List</a>
     <a href="{% url 'receipt_print' receipt.id %}" class="btn btn-print">Print Receipt</a>
 
 </div>

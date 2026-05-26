@@ -20,7 +20,7 @@
 
     <table>
         <thead>
-            <tr>
+            <tr class="{% if sale.is_voided %}voided-row{% endif %}">
                 <th>Customer</th>
                 <th>Phone</th>
                 <th>Product</th>
@@ -52,7 +52,9 @@
                 <td class="highlight">{{ sale.final_total }}</td>
 
                 <td>
-                    {% if sale.payment_status == "Paid" %}
+                    {% if sale.is_voided %}
+                        <span class="badge voided">Voided</span>
+                    {% elif sale.payment_status == "Paid" %}
                         <span class="badge paid">Paid</span>
                     {% else %}
                         <span class="badge pending">Pending</span>
@@ -67,9 +69,13 @@
 
                     <a href="{% url 'receipt_print' sale.id %}" class="btn-print">Print</a>
 
-                    <a href="{% url 'edit_sale' sale.id %}" class="btn-edit">Edit</a>
+                    {% if not sale.is_voided %}
+                        <a href="{% url 'edit_sale' sale.id %}" class="btn-edit">Edit</a>
+                    {% endif %}
 
-                    <a href="{% url 'delete_sale' sale.id %}" class="btn-delete">Delete</a>
+                    {% if user.is_superuser and not sale.is_voided %}
+                        <a href="{% url 'void_sale' sale.id %}" class="btn-void">Void</a>
+                    {% endif %}
 
                 </td>
 

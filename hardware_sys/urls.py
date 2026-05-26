@@ -38,6 +38,7 @@ urlpatterns = [
     path("sales/", views.sales_list, name="sales_list"),
     path("sales/add/", views.add_sale, name="add_sale"),
     path("sales/edit/<int:sale_id>/", views.edit_sale, name="edit_sale"),
+    path("sales/void/<int:sale_id>/", views.void_sale, name="void_sale"),
     path("sales/delete/<int:sale_id>/", views.delete_sale, name="delete_sale"),
 
     #receipt view
