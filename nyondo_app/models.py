@@ -67,6 +67,36 @@ class Stock(models.Model):
     def low_stock_count(cls):
         return cls.low_stock_items().count()
 
+    def clean(self):
+        errors = {}
+
+        if self.product_name:
+            self.product_name = self.product_name.strip()
+        if self.supplier_name:
+            self.supplier_name = self.supplier_name.strip()
+
+        if not self.product_name:
+            errors["product_name"] = "Product name is required."
+        if not self.supplier_name:
+            errors["supplier_name"] = "Supplier name is required."
+        if self.buying_price is not None and self.buying_price < 0:
+            errors["buying_price"] = "Buying price cannot be negative."
+        if self.selling_price is not None and self.selling_price < 0:
+            errors["selling_price"] = "Selling price cannot be negative."
+        if (
+            self.buying_price is not None
+            and self.selling_price is not None
+            and self.selling_price < self.buying_price
+        ):
+            errors["selling_price"] = "Selling price cannot be lower than buying price."
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.product_name
 
@@ -121,16 +151,50 @@ class Sales(models.Model):
     # VALIDATION
 
     def clean(self):
-        if self.quantity <= 0:
-            raise ValidationError("Quantity must be greater than 0")
+        errors = {}
 
-        if self.distance_km < 0:
-            raise ValidationError("Distance cannot be negative")
+        if self.customer_name:
+            self.customer_name = self.customer_name.strip()
+        if self.customer_phone:
+            self.customer_phone = self.customer_phone.strip()
+
+        if not self.customer_name:
+            errors["customer_name"] = "Customer name is required."
+        if self.customer_phone and not self.customer_phone.isdigit():
+            errors["customer_phone"] = "Phone number should contain digits only."
+        if self.customer_phone and len(self.customer_phone) < 10:
+            errors["customer_phone"] = "Phone number must be at least 10 digits."
+        if self.quantity is not None and self.quantity <= 0:
+            errors["quantity"] = "Quantity must be greater than 0."
+        if self.unit_price is not None and self.unit_price < 0:
+            errors["unit_price"] = "Unit price cannot be negative."
+        if self.distance_km is not None and self.distance_km < 0:
+            errors["distance_km"] = "Distance cannot be negative."
+        if self.product_id and self.quantity:
+            available_quantity = self.product.quantity
+            if self.pk:
+                previous_sale = Sales.objects.filter(pk=self.pk).first()
+                if previous_sale and previous_sale.product_id == self.product_id:
+                    available_quantity += previous_sale.quantity
+
+            if self.quantity > available_quantity:
+                errors["quantity"] = (
+                    f"Not enough stock available. Available: {available_quantity}, "
+                    f"requested: {self.quantity}."
+                )
+
+        if errors:
+            raise ValidationError(errors)
 
     # SAVE
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
+            if not self.receipt_no:
+                self.receipt_no = uuid.uuid4().hex[:10].upper()
+
+            self.full_clean()
+
             previous_sale = None
             if self.pk:
                 previous_sale = Sales.objects.select_related("product").filter(pk=self.pk).first()
@@ -163,10 +227,6 @@ class Sales(models.Model):
                 self.product.quantity -= self.quantity
                 self.product.save()
 
-            if not self.receipt_no:
-                self.receipt_no = uuid.uuid4().hex[:10].upper()
-
-            self.clean()
             super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -189,6 +249,28 @@ class Supplier(models.Model):
     contact = models.CharField(max_length=15)
     address = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        errors = {}
+
+        if self.name:
+            self.name = self.name.strip()
+        if self.contact:
+            self.contact = self.contact.strip()
+
+        if not self.name:
+            errors["name"] = "Supplier name is required."
+        if self.contact and not self.contact.isdigit():
+            errors["contact"] = "Supplier contact should contain digits only."
+        if self.contact and len(self.contact) < 10:
+            errors["contact"] = "Supplier contact must be at least 10 digits."
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -223,7 +305,30 @@ class SupplierCredit(models.Model):
     date_supplied = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def clean(self):
+        errors = {}
+
+        if self.product_name:
+            self.product_name = self.product_name.strip()
+
+        if not self.product_name:
+            errors["product_name"] = "Product name is required."
+        if self.quantity is not None and self.quantity <= 0:
+            errors["quantity"] = "Quantity must be greater than 0."
+        if self.unit_cost is not None and self.unit_cost < 0:
+            errors["unit_cost"] = "Unit cost cannot be negative."
+        if self.amount_paid is not None and self.amount_paid < 0:
+            errors["amount_paid"] = "Amount paid cannot be negative."
+        if self.quantity and self.unit_cost is not None and self.amount_paid is not None:
+            total_cost = self.quantity * self.unit_cost
+            if self.amount_paid > total_cost:
+                errors["amount_paid"] = "Amount paid cannot exceed total cost."
+
+        if errors:
+            raise ValidationError(errors)
+
     def save(self, *args, **kwargs):
+        self.full_clean()
 
         self.total_cost = self.unit_cost * self.quantity
         self.balance = self.total_cost - self.amount_paid
@@ -295,6 +400,38 @@ class DepositScheme(models.Model):
         elif self.amount_deposited > 0:
             return "Partial"
         return "Pending"
+
+    def clean(self):
+        errors = {}
+
+        if self.customer_name:
+            self.customer_name = self.customer_name.strip()
+        if self.nin_number:
+            self.nin_number = self.nin_number.strip().upper()
+        if self.phone_number:
+            self.phone_number = self.phone_number.strip()
+
+        if not self.customer_name:
+            errors["customer_name"] = "Customer name is required."
+        if not self.nin_number:
+            errors["nin_number"] = "NIN is required."
+        if self.quantity is not None and self.quantity <= 0:
+            errors["quantity"] = "Quantity must be greater than 0."
+        if self.unit_price is not None and self.unit_price < 0:
+            errors["unit_price"] = "Unit price cannot be negative."
+        if self.amount_deposited is not None and self.amount_deposited < 0:
+            errors["amount_deposited"] = "Amount deposited cannot be negative."
+        if self.unit_price is not None and self.quantity and self.amount_deposited is not None:
+            total_cost = self.unit_price * self.quantity
+            if self.amount_deposited > total_cost:
+                errors["amount_deposited"] = "Deposit cannot exceed total cost."
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.customer_name} - {self.product_name}"

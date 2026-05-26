@@ -1,0 +1,32 @@
+.audit-filter {
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+.audit-filter input,
+.audit-filter select,
+.audit-filter button {
+    padding:10px 12px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+.audit-filter button {
+    background:#5a4b8a;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+.audit-table {
+    width:100%;
+    border-collapse:collapse;
+}
+.audit-table th,
+.audit-table td {
+    border:1px solid #ddd;
+    padding:12px;
+    text-align:left;
+}
+.audit-table th {
+    background:#f2f2f2;
+}

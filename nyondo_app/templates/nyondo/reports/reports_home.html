@@ -1,4 +1,5 @@
 {% extends "nyondo/base.html" %}
+{% load static %}
 
 {% block content %}
 
@@ -20,31 +21,6 @@
 
 </div>
 
-<style>
-
-.cards{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-    gap:15px;
-    margin-top:20px;
-}
-
-.card{
-    background:white;
-    padding:20px;
-    border-radius:10px;
-    text-align:center;
-    text-decoration:none;
-    color:black;
-    box-shadow:0 2px 8px rgba(0,0,0,0.1);
-    font-weight:bold;
-}
-
-.card:hover{
-    background:#0b1f3a;
-    color:white;
-}
-
-</style>
+<link rel="stylesheet" href="{% static 'nyondo_app/css/nyondo/reports/reports_home.css' %}">
 
 {% endblock %}

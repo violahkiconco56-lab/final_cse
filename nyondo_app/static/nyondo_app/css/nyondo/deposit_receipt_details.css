@@ -1,0 +1,81 @@
+body{
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+
+        .receipt-box{
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .header{
+            text-align: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .header h2{
+            margin: 0;
+            color: #333;
+        }
+
+        .info{
+            margin-top: 20px;
+        }
+
+        .info p{
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        table{
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        table th, table td{
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        table th{
+            background: #f1f1f1;
+        }
+
+        .total{
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .total h3{
+            margin: 5px 0;
+        }
+
+        .status{
+            font-weight: bold;
+        }
+
+        .cleared{ color: green; }
+        .partial{ color: orange; }
+        .pending{ color: #555; }
+
+        .btn{
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 15px;
+            background: #5a4b8a;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .btn-print{
+            background: #28a745;
+        }

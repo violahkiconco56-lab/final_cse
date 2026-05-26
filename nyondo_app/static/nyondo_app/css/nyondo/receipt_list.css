@@ -1,0 +1,38 @@
+body{
+            font-family: Arial;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+
+        .container{
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        table{
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td{
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th{
+            background: #eee;
+        }
+
+        .btn{
+            padding: 6px 10px;
+            text-decoration: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 13px;
+        }
+
+        .view{ background: #007bff; }
+        .print{ background: #28a745; }

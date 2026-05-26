@@ -1,0 +1,123 @@
+/* PAGE WRAPPER */
+    .page-wrapper {
+        padding: 20px;
+        background: #f7f3ff;
+        min-height: 100vh;
+    }
+
+    /* HEADER */
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .header h2 {
+        color: #4b0082;
+    }
+
+    /* BUTTONS */
+    .btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+        transition: 0.3s;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: #6a0dad;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #4b0082;
+    }
+
+    .btn-danger {
+        background: #d00000;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #a00000;
+    }
+
+    /* FILTER SECTION */
+    .filters {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+    .filters input,
+    .filters select {
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        outline: none;
+    }
+
+    .filters input:focus,
+    .filters select:focus {
+        border-color: #6a0dad;
+        box-shadow: 0 0 5px rgba(106, 13, 173, 0.3);
+    }
+
+    /* TABLE */
+    .table-container {
+        overflow-x: auto;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(75, 0, 130, 0.15);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background: #6a0dad;
+        color: white;
+    }
+
+    th, td {
+        padding: 12px;
+        text-align: left;
+    }
+
+    tbody tr {
+        border-bottom: 1px solid #eee;
+        transition: 0.2s;
+    }
+
+    tbody tr:hover {
+        background: #f3e8ff;
+    }
+
+    /* STOCK STATUS */
+    .low-stock {
+        color: #ff9800;
+        font-weight: bold;
+    }
+
+    .out-stock {
+        color: #d00000;
+        font-weight: bold;
+    }
+
+    .in-stock {
+        color: #2e7d32;
+        font-weight: bold;
+    }
+
+    /* EMPTY STATE */
+    .empty {
+        text-align: center;
+        padding: 20px;
+        color: gray;
+    }

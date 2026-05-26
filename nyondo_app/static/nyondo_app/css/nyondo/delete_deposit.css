@@ -1,0 +1,50 @@
+body{
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container{
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        h2{
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+
+        p{
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .btn{
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-delete{
+            background: #dc3545;
+        }
+
+        .btn-cancel{
+            background: #6c757d;
+        }
+
+        .buttons{
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }

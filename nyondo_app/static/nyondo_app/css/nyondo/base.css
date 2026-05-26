@@ -1,0 +1,105 @@
+:root {
+            --bg: #f3eef9;
+            --surface: #efe5f5;
+            --surface-soft: #f7f1fb;
+            --sidebar: #5d4492;
+            --sidebar-hover: #7f66bf;
+            --text: #2f1f45;
+            --text-muted: #6d5d88;
+            --border: rgba(109, 89, 138, 0.22);
+            --button: #7550b1;
+            --button-hover: #5d3d94;
+            --button-text: #f8f5ff;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background: var(--sidebar);
+            color: var(--button-text);
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding-top: 24px;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 12px 22px;
+            color: var(--button-text);
+            text-decoration: none;
+            border-left: 4px solid transparent;
+        }
+
+        .sidebar a:hover {
+            background: var(--sidebar-hover);
+        }
+
+        .menu-title {
+            padding: 10px 22px;
+            font-size: 12px;
+            opacity: 0.7;
+            text-transform: uppercase;
+        }
+
+        .no-role-title {
+            color: #ff8b8b;
+            padding-left: 22px;
+        }
+
+        .no-role-message {
+            padding: 0 22px;
+            font-size: 13px;
+            opacity: 0.6;
+            color: #fff;
+        }
+
+        /* MAIN CONTENT AREA */
+        .main {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            background: var(--surface);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .container {
+            padding: 20px;
+            flex: 1;
+        }
+
+        .messages-wrapper {
+            padding: 10px 25px;
+        }
+
+        .message-alert {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }

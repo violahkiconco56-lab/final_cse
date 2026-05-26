@@ -1,4 +1,5 @@
 {% extends "nyondo/base.html" %}
+{% load static %}
 
 {% block title %}Add Stock | Nyondo Hardware{% endblock %}
 
@@ -79,107 +80,6 @@
 
 </div>
 
-<style>
-
-.form-container{
-    max-width: 700px;
-    margin: 30px auto;
-    padding: 25px;
-    background: #fff;
-    border-radius: 10px;
-}
-
-.form-container h2{
-    margin-bottom: 20px;
-    color: #5a4b8a;
-}
-
-.grid{
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-.field{
-    display: flex;
-    flex-direction: column;
-}
-
-.field.full{
-    grid-column: 1 / -1;
-}
-
-label{
-    margin-bottom: 6px;
-    font-weight: 600;
-    color: #444;
-}
-
-input,
-select,
-textarea{
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    outline: none;
-    font-size: 14px;
-    box-sizing: border-box;
-}
-
-input:focus,
-select:focus,
-textarea:focus{
-    border-color: #5a4b8a;
-}
-
-textarea{
-    min-height: 100px;
-    resize: vertical;
-}
-
-.buttons{
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
-}
-
-.btn-save{
-    background: #5a4b8a;
-    color: white;
-    padding: 10px 18px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.btn-back{
-    background: #8a79b2;
-    color: white;
-    padding: 10px 18px;
-    border-radius: 6px;
-    text-decoration: none;
-}
-
-.btn-save:hover,
-.btn-back:hover{
-    opacity: 0.9;
-}
-
-.errorlist{
-    color: red;
-    margin-top: 5px;
-    font-size: 13px;
-    list-style: none;
-    padding: 0;
-}
-
-@media (max-width: 768px){
-    .grid{
-        grid-template-columns: 1fr;
-    }
-}
-
-</style>
+<link rel="stylesheet" href="{% static 'nyondo_app/css/nyondo/add_stock.css' %}">
 
 {% endblock %}

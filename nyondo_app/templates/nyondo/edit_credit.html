@@ -1,73 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Edit Supplier Credit</title>
 
-    <style>
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #f1eef9;
-            margin: 0;
-            padding: 20px;
-            color: #3d2f5f;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: auto;
-            background: #fff;
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 18px 40px rgba(89, 70, 149, 0.08);
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 18px;
-            color: #482f7b;
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        input, select, textarea {
-            padding: 12px;
-            margin-bottom: 4px;
-            border: 1px solid #d7cfe5;
-            border-radius: 10px;
-            width: 100%;
-            background: #faf6ff;
-            color: #2f2355;
-        }
-
-        button {
-            padding: 12px;
-            background: #5a4b8a;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        button:hover {
-            background: #473a73;
-        }
-
-        .back {
-            display: inline-block;
-            margin-top: 10px;
-            text-decoration: none;
-            color: #5a4b8a;
-            font-weight: 600;
-        }
-
-    </style>
+    <link rel="stylesheet" href="{% static 'nyondo_app/css/nyondo/edit_credit.css' %}">
 </head>
 
 <body>

@@ -37,15 +37,32 @@ class StockForm(forms.ModelForm):
             raise forms.ValidationError("Quantity cannot be negative")
         return quantity
 
+    def clean_product_name(self):
+        return (self.cleaned_data.get("product_name") or "").strip()
+
+    def clean_supplier_name(self):
+        return (self.cleaned_data.get("supplier_name") or "").strip()
+
     def clean(self):
         cleaned_data = super().clean()
 
         buying_price = cleaned_data.get("buying_price")
         selling_price = cleaned_data.get("selling_price")
+        reorder_level = cleaned_data.get("reorder_level")
 
-        if buying_price and selling_price:
+        if buying_price is not None and buying_price < 0:
+            self.add_error("buying_price", "Buying price cannot be negative")
+
+        if selling_price is not None and selling_price < 0:
+            self.add_error("selling_price", "Selling price cannot be negative")
+
+        if reorder_level is not None and reorder_level < 0:
+            self.add_error("reorder_level", "Reorder level cannot be negative")
+
+        if buying_price is not None and selling_price is not None:
             if selling_price < buying_price:
-                raise forms.ValidationError(
+                self.add_error(
+                    "selling_price",
                     "Selling price cannot be lower than buying price"
                 )
 
@@ -75,6 +92,9 @@ class SupplierCreditForm(forms.ModelForm):
             "notes": forms.Textarea(attrs={"rows": 3}),
         }
 
+    def clean_product_name(self):
+        return (self.cleaned_data.get("product_name") or "").strip()
+
     def clean(self):
         cleaned_data = super().clean()
 
@@ -82,11 +102,21 @@ class SupplierCreditForm(forms.ModelForm):
         unit_cost = cleaned_data.get("unit_cost")
         amount_paid = cleaned_data.get("amount_paid") or 0
 
+        if quantity is not None and quantity <= 0:
+            self.add_error("quantity", "Quantity must be greater than 0.")
+
+        if unit_cost is not None and unit_cost < 0:
+            self.add_error("unit_cost", "Unit cost cannot be negative.")
+
+        if amount_paid is not None and amount_paid < 0:
+            self.add_error("amount_paid", "Amount paid cannot be negative.")
+
         if quantity and unit_cost:
             total_cost = quantity * unit_cost
 
             if amount_paid > total_cost:
-                raise forms.ValidationError(
+                self.add_error(
+                    "amount_paid",
                     "Amount paid cannot exceed total cost."
                 )
 
@@ -118,8 +148,11 @@ class DepositSchemeForm(forms.ModelForm):
             "amount_deposited": forms.NumberInput(attrs={"step": "0.01", "min": 0}),
         }
 
+    def clean_customer_name(self):
+        return (self.cleaned_data.get("customer_name") or "").strip()
+
     def clean_nin_number(self):
-        nin = self.cleaned_data.get("nin_number")
+        nin = (self.cleaned_data.get("nin_number") or "").strip().upper()
 
         qs = DepositScheme.objects.filter(nin_number=nin)
 
@@ -138,11 +171,21 @@ class DepositSchemeForm(forms.ModelForm):
         quantity = cleaned_data.get("quantity")
         amount = cleaned_data.get("amount_deposited") or 0
 
+        if unit_price is not None and unit_price < 0:
+            self.add_error("unit_price", "Unit price cannot be negative.")
+
+        if quantity is not None and quantity <= 0:
+            self.add_error("quantity", "Quantity must be greater than 0.")
+
+        if amount is not None and amount < 0:
+            self.add_error("amount_deposited", "Amount deposited cannot be negative.")
+
         if unit_price and quantity:
             total_cost = unit_price * quantity
 
             if amount > total_cost:
-                raise forms.ValidationError(
+                self.add_error(
+                    "amount_deposited",
                     "Deposit cannot exceed total cost."
                 )
 
@@ -174,24 +217,46 @@ class SaleForm(forms.ModelForm):
             "payment_status": forms.Select(),
         }
 
+    def clean_customer_name(self):
+        return (self.cleaned_data.get("customer_name") or "").strip()
+
+    def clean_customer_phone(self):
+        phone = (self.cleaned_data.get("customer_phone") or "").strip()
+
+        if phone and not phone.isdigit():
+            raise forms.ValidationError("Phone number should contain digits only")
+        if phone and len(phone) < 10:
+            raise forms.ValidationError("Phone number must be at least 10 digits")
+
+        return phone
+
     def clean(self):
         cleaned_data = super().clean()
 
         product = cleaned_data.get("product")
         quantity = cleaned_data.get("quantity")
-        phone = cleaned_data.get("customer_phone")
         distance = cleaned_data.get("distance_km")
+        unit_price = cleaned_data.get("unit_price")
 
-        if phone and len(phone) < 10:
-            raise forms.ValidationError("Phone number must be at least 10 digits")
+        if quantity is not None and quantity <= 0:
+            self.add_error("quantity", "Quantity must be greater than 0")
+
+        if unit_price is not None and unit_price < 0:
+            self.add_error("unit_price", "Unit price cannot be negative")
 
         if distance is not None and distance < 0:
-            raise forms.ValidationError("Distance cannot be negative")
+            self.add_error("distance_km", "Distance cannot be negative")
 
         if product and quantity:
-            if quantity > product.quantity:
-                raise forms.ValidationError(
-                    f"Not enough stock. Available: {product.quantity}"
+            available_quantity = product.quantity
+
+            if self.instance.pk and self.instance.product_id == product.id:
+                available_quantity += self.instance.quantity
+
+            if quantity > available_quantity:
+                self.add_error(
+                    "quantity",
+                    f"Not enough stock. Available: {available_quantity}"
                 )
 
         # auto-set correct selling price
