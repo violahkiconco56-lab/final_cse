@@ -10,9 +10,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background:
-                linear-gradient(rgba(47, 31, 69, 0.48), rgba(47, 31, 69, 0.48)),
-                url("../../images/nyondo%20image.jpg") center/cover no-repeat fixed;
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             color: #3b2d52;
         }
 
