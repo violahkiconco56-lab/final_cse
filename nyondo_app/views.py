@@ -1052,25 +1052,26 @@ def profit_report(request):
 
     # Monthly profit
     monthly_profit = (
-        Sales.objects.filter(is_voided=False).annotate(month=TruncMonth("sale_date"))
-        .values("month")
-        .annotate(
-            revenue=Sum(
-                ExpressionWrapper(
-                    F("quantity") * F("unit_price"),
-                    output_field=DecimalField()
-                )
-            ),
-            profit=Sum(
-                ExpressionWrapper(
-                    (F("unit_price") - F("product__buying_price")) * F("quantity"),
-                    output_field=DecimalField()
-                )
-            ),
-            orders=Count("id")
-        )
-        .order_by("month")
+    Sales.objects.filter(is_voided=False)
+    .annotate(month=TruncMonth("sale_date"))
+    .values("month")
+    .annotate(
+        revenue=Sum(
+            ExpressionWrapper(
+                F("quantity") * F("unit_price"),
+                output_field=DecimalField()
+            )
+        ),
+        profit=Sum(
+            ExpressionWrapper(
+                (F("unit_price") - F("product__buying_price")) * F("quantity"),
+                output_field=DecimalField()
+            )
+        ),
+        orders=Count("id")
     )
+    .order_by("month")
+)
 
     context = {
         "sales": sales,
