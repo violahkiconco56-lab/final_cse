@@ -6,6 +6,12 @@ from django.contrib import messages
 from django.db.models import DecimalField, ExpressionWrapper, Sum, F, Q, Count
 from django.core.exceptions import ValidationError
 
+from django.contrib.auth.models import User, Group
+from django.utils import timezone
+from django.db.models.functions import TruncMonth
+from django.db import transaction
+from .models import Stock, Sales, SupplierCredit, DepositScheme, Supplier, AuditLog
+from .forms import StockForm, SaleForm, SupplierCreditForm, DepositSchemeForm, SupplierForm, CustomUserCreationForm
 
 def log_audit(user, action, description, model_name=None, object_id=None):
     AuditLog.objects.create(
@@ -28,12 +34,6 @@ def get_low_stock_notification():
             if count else "All stock levels are healthy"
         ),
     }
-from django.contrib.auth.models import User, Group
-from django.utils import timezone
-from django.db.models.functions import TruncMonth
-from django.db import transaction
-from .models import Stock, Sales, SupplierCredit, DepositScheme, Supplier, AuditLog
-from .forms import StockForm, SaleForm, SupplierCreditForm, DepositSchemeForm, CustomUserCreationForm
 
 
 
@@ -47,13 +47,12 @@ def register_view(request):
         form = CustomUserCreationForm(request.POST)
 
         if form.is_valid():
-
-            new_user = form.save()
+            new_user = form.save() # This triggers the custom save() in forms.py
             log_audit(
-                new_user,
+                request.user, # The superuser performing the registration
                 "CREATE",
                 f"Registered user {new_user.username}",
-                model_name="User",
+                model_name="auth.User",
                 object_id=new_user.pk,
             )
 
@@ -64,11 +63,16 @@ def register_view(request):
 
             return redirect("register")
 
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.capitalize()}: {error}")
+
     else:
 
         form = CustomUserCreationForm()
 
-    users = User.objects.all().order_by("-id")
+    users = User.objects.prefetch_related('groups').all().order_by("-id")
 
     context = {
         "form": form,
@@ -80,6 +84,40 @@ def register_view(request):
         "accounts/register.html",
         context
     )
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def delete_user(request, user_id):
+    user_to_delete = get_object_or_404(User, pk=user_id)
+
+    if request.method == "POST":
+        if user_to_delete == request.user:
+            messages.error(request, "You cannot delete your own account.")
+            return redirect("register")
+
+        # Prevent deleting the last superuser
+        if user_to_delete.is_superuser:
+            remaining_superusers = User.objects.filter(is_superuser=True).exclude(pk=user_to_delete.pk).count()
+            if remaining_superusers == 0:
+                messages.error(request, "Cannot delete the last superuser.")
+                return redirect("register")
+
+        username = user_to_delete.username
+        user_pk = user_to_delete.pk
+        user_to_delete.delete()
+        log_audit(
+            request.user,
+            "DELETE",
+            f"Deleted user {username}",
+            model_name="auth.User",
+            object_id=user_pk,
+        )
+        messages.success(request, f"User {username} deleted successfully.")
+        return redirect("register")
+
+    # If it's a GET request, we'll just redirect back to the register page.
+    # The confirmation is handled by JavaScript on the register.html page.
+    return redirect("register")
 
 @ensure_csrf_cookie
 def login_view(request):
@@ -96,27 +134,26 @@ def login_view(request):
         if user is not None:
             login(request, user)
             
-            # Safe execution of logs
-            try:
-                log_audit(
-                    user,
-                    "LOGIN",
-                    f"User {user.username} logged in",
-                    model_name="User",
-                    object_id=user.pk,
-                )
-            except NameError:
-                pass
+            log_audit(
+                user,
+                "LOGIN",
+                f"User {user.username} logged in",
+                model_name="User",
+                object_id=user.pk,
+            )
 
             group_names = list(user.groups.values_list("name", flat=True))
             normalized_groups = [name.strip().lower() for name in group_names]
 
             if user.is_superuser:
                 return redirect("admin_dashboard")
-            elif "sales" in normalized_groups:
+            # Accept both old and new group naming variations
+            elif "sales attendant" in normalized_groups or "sales" in normalized_groups:
                 return redirect("sales_dashboard")
-            elif "stock" in normalized_groups:
+            elif "store manager" in normalized_groups or "stock" in normalized_groups:
                 return redirect("stock_dashboard")
+            elif "accounts/admin" in normalized_groups or "admin" in normalized_groups:
+                return redirect("admin_dashboard")
             else:
                 messages.error(
                     request,
@@ -124,7 +161,7 @@ def login_view(request):
                 )
                 return redirect("login")
         else:
-            messages.error(request, "Invalid username or password")
+            messages.error(request, "Account not found, Please check your credentials and try again.")
             return redirect("login")
 
     return render(request, "accounts/login.html")    
@@ -132,16 +169,13 @@ def login_view(request):
 
 def logout_view(request):
     if request.user.is_authenticated:
-        try:
-            log_audit(
-                request.user,
-                "LOGOUT",
-                f"User {request.user.username} logged out",
-                model_name="User",
-                object_id=request.user.pk,
-                )
-        except NameError:
-            pass
+        log_audit(
+            request.user,
+            "LOGOUT",
+            f"User {request.user.username} logged out",
+            model_name="User",
+            object_id=request.user.pk,
+        )
 
     logout(request)
     messages.success(request, "Logged out successfully.")
@@ -169,25 +203,20 @@ def admin_dashboard(request):
     )["total"] or 0
 
     total_orders = sales.count()
-    total_items_sold = sales.aggregate(total=Sum("quantity"))["total"] or 0
 
     stock_value = Stock.objects.aggregate(
         total=Sum(ExpressionWrapper(F("quantity") * F("selling_price"), output_field=DecimalField()))
     )["total"] or 0
 
     total_products = Stock.objects.count()
-    low_stock = Stock.objects.filter(quantity__lte=10, quantity__gt=0).count()
-    out_of_stock = Stock.objects.filter(quantity=0).count()
+    stock_issues = Stock.objects.filter(quantity__lte=10).count()
 
-    try:
-        low_stock_alert = get_low_stock_notification()
-        if low_stock_alert.get("low_stock_alert_count"):
-            messages.warning(request, low_stock_alert["low_stock_alert_message"])
-        alert_items = low_stock_alert.get("low_stock_alert_items", [])
-        alert_count = low_stock_alert.get("low_stock_alert_count", 0)
-        alert_msg = low_stock_alert.get("low_stock_alert_message", "")
-    except NameError:
-        alert_items, alert_count, alert_msg = [], 0, ""
+    low_stock_alert = get_low_stock_notification()
+    if low_stock_alert.get("low_stock_alert_count"):
+        messages.warning(request, low_stock_alert["low_stock_alert_message"])
+    alert_items = low_stock_alert.get("low_stock_alert_items", [])
+    alert_count = low_stock_alert.get("low_stock_alert_count", 0)
+    alert_msg = low_stock_alert.get("low_stock_alert_message", "")
 
     total_credit = SupplierCredit.objects.aggregate(total=Sum("balance"))["total"] or 0
     pending_credit = SupplierCredit.objects.filter(status="Pending").count()
@@ -203,7 +232,6 @@ def admin_dashboard(request):
     recent_sales = sales.order_by("-sale_date")[:10]
     top_products = sales.values("product__product_name").annotate(total_sold=Sum("quantity")).order_by("-total_sold")[:5]
 
-    audit_count = AuditLog.objects.count()
     recent_audits = AuditLog.objects.select_related("user").order_by("-timestamp")[:5]
 
     profit_margin = (total_profit / total_revenue * 100) if total_revenue else 0
@@ -213,11 +241,9 @@ def admin_dashboard(request):
         "total_profit": total_profit,
         "profit_margin": round(profit_margin, 2),
         "total_orders": total_orders,
-        "total_items_sold": total_items_sold,
         "stock_value": stock_value,
         "total_products": total_products,
-        "low_stock": low_stock,
-        "out_of_stock": out_of_stock,
+        "stock_issues": stock_issues,
         "low_stock_alert_items": alert_items,
         "low_stock_alert_count": alert_count,
         "low_stock_alert_message": alert_msg,
@@ -229,7 +255,6 @@ def admin_dashboard(request):
         "completed_deposits": completed_deposits,
         "free_deliveries": free_deliveries,
         "charged_deliveries": charged_deliveries,
-        "audit_count": audit_count,
         "recent_audits": recent_audits,
         "recent_sales": recent_sales,
         "top_products": top_products,
@@ -249,7 +274,6 @@ def stock_dashboard(request):
 
     stock_products = Stock.objects.all()
     total_products = Stock.objects.count()
-    total_stock_items = Stock.objects.aggregate(total=Sum("quantity"))["total"] or 0
 
     inventory_value = Stock.objects.aggregate(
         total=Sum(ExpressionWrapper(F("quantity") * F("selling_price"), output_field=DecimalField()))
@@ -258,13 +282,10 @@ def stock_dashboard(request):
     low_stock = Stock.objects.filter(quantity__lte=10).count()
     out_of_stock = Stock.objects.filter(quantity=0).count()
     
-    try:
-        low_stock_alert = get_low_stock_notification()
-        alert_items = low_stock_alert.get("low_stock_alert_items", [])
-        alert_count = low_stock_alert.get("low_stock_alert_count", 0)
-        alert_msg = low_stock_alert.get("low_stock_alert_message", "")
-    except NameError:
-        alert_items, alert_count, alert_msg = [], 0, ""
+    low_stock_alert = get_low_stock_notification()
+    alert_items = low_stock_alert.get("low_stock_alert_items", [])
+    alert_count = low_stock_alert.get("low_stock_alert_count", 0)
+    alert_msg = low_stock_alert.get("low_stock_alert_message", "")
 
     total_profit = Stock.objects.aggregate(
         total=Sum(ExpressionWrapper((F("selling_price") - F("buying_price")) * F("quantity"), output_field=DecimalField()))
@@ -273,7 +294,6 @@ def stock_dashboard(request):
     context = {
         "stock_products": stock_products,
         "total_products": total_products,
-        "total_stock_items": total_stock_items,
         "inventory_value": inventory_value,
         "low_stock": low_stock,
         "out_of_stock": out_of_stock,
@@ -301,22 +321,33 @@ def sales_dashboard(request):
     sales = Sales.objects.select_related("product").filter(is_voided=False)
 
     total_sales = sales.count()
-    total_revenue = sum(sale.final_total for sale in sales)
     
-    # Safe Python-based properties computation with defaults if missing
-    total_profit = sum(getattr(sale, 'profit', 0) for sale in sales)
+    # Use ORM aggregation for better performance
+    aggregated_sales = sales.aggregate(
+        total_revenue=Sum(
+            ExpressionWrapper(F("quantity") * F("unit_price") + F("distance_km") * 3000, output_field=DecimalField())
+            # Assuming 3000 is the transport charge per km for calculation, adjust if logic is different
+        ),
+        total_profit=Sum(
+            ExpressionWrapper((F("unit_price") - F("product__buying_price")) * F("quantity"), output_field=DecimalField())
+        )
+    )
+    total_revenue = aggregated_sales["total_revenue"] or 0
+    total_profit = aggregated_sales["total_profit"] or 0
+
     total_customers = sales.values("customer_phone").distinct().count()
-    transport_charges = sum(getattr(sale, 'transport_charge', 0) for sale in sales)
     
-    # ✅ FIXED: Completed the missing 'pending_payments' logic safely
-    pending_payments = sum(getattr(sale, 'pending_payment', 0) for sale in sales)
+    pending_payments = sum(sale.final_total for sale in sales if sale.payment_status == 'Pending')
 
     # ================= TODAY SALES =================
     today = timezone.now().date()
     today_sales_qs = sales.filter(sale_date__date=today)
-    
-    today_sales = today_sales_qs.count()
-    today_revenue = sum(getattr(sale, 'final_total', 0) for sale in today_sales_qs)
+    today_sales_aggregated = today_sales_qs.aggregate(
+        count=Count('id'),
+        revenue=Sum(ExpressionWrapper(F("quantity") * F("unit_price") + F("distance_km") * 3000, output_field=DecimalField()))
+    )
+    today_sales = today_sales_aggregated["count"] or 0
+    today_revenue = today_sales_aggregated["revenue"] or 0
 
     # ================= TOP PRODUCTS =================
     top_products = (
@@ -333,7 +364,6 @@ def sales_dashboard(request):
         "total_revenue": total_revenue,
         "total_profit": total_profit,
         "total_customers": total_customers,
-        "transport_charges": transport_charges,
         "pending_payments": pending_payments,
         "today_sales": today_sales,
         "today_revenue": today_revenue,
@@ -535,7 +565,25 @@ def add_sale(request):
     form = SaleForm()
 
     if request.method == "POST":
+        action = request.POST.get("action")
         form = SaleForm(request.POST)
+
+        # Always populate unit_price from the selected product in the server-side form
+        selected_product_id = request.POST.get("product")
+        if selected_product_id:
+            try:
+                product = Stock.objects.get(pk=selected_product_id)
+                form.fields["unit_price"].initial = product.selling_price
+                if form.is_bound:
+                    data = form.data.copy()
+                    data[form.add_prefix("unit_price")] = str(product.selling_price)
+                    form.data = data
+            except (Stock.DoesNotExist, ValueError):
+                pass
+
+        if action == "update_price":
+            messages.info(request, "Selling price loaded from selected product.")
+            return render(request, "nyondo/add_sale.html", {"form": form, "products": products})
 
         if form.is_valid():
             sale = form.save()
@@ -552,6 +600,8 @@ def add_sale(request):
                 f"Sale created successfully. Receipt No: {sale.receipt_no}"
             )
             return redirect("sales_list")
+        else:
+            messages.error(request, "Please fix the errors below and try again.")
 
     return render(request, "nyondo/add_sale.html", {"form": form, "products": products})
 
@@ -704,6 +754,35 @@ def credit_list(request):
     context = {"credits": credits}
     return render(request, "nyondo/credit_list.html", context)
         
+
+
+# LIST SUPPLIERS
+@login_required
+def supplier_list(request):
+    suppliers = Supplier.objects.all().order_by("name")
+    return render(request, "nyondo/supplier_list.html", {"suppliers": suppliers})
+
+
+# ADD SUPPLIER
+@login_required
+def add_supplier(request):
+    if request.method == "POST":
+        form = SupplierForm(request.POST)
+        if form.is_valid():
+            supplier = form.save()
+            log_audit(
+                request.user,
+                "CREATE",
+                f"Registered supplier {supplier.name}",
+                model_name="Supplier",
+                object_id=supplier.pk,
+            )
+            messages.success(request, "Supplier registered successfully.")
+            return redirect("supplier_list")
+    else:
+        form = SupplierForm()
+
+    return render(request, "nyondo/add_supplier.html", {"form": form})
 
 
 # ADD NEW CREDIT

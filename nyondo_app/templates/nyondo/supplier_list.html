@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Suppliers</title>
+    <link rel="stylesheet" href="{% static 'nyondo_app/css/nyondo/credit_list.css' %}">
+</head>
+<body>
+
+<div class="container">
+
+    <div class="top-bar">
+        <h2>Supplier List</h2>
+        <div class="top-actions">
+            <a href="{% url 'add_supplier' %}" class="btn btn-add">+ Add Supplier</a>
+            <a href="{% url 'credit_list' %}" class="btn btn-secondary">← Back to Credits</a>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+        </div>
+    </div>
+
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Contact</th>
+            <th>Address</th>
+            <th>Created</th>
+        </tr>
+
+        {% for supplier in suppliers %}
+        <tr>
+            <td>{{ supplier.name }}</td>
+            <td>{{ supplier.contact }}</td>
+            <td>{{ supplier.address|default:'-' }}</td>
+            <td>{{ supplier.created_at|date:'Y-m-d H:i' }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No suppliers registered yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+</body>
+</html>

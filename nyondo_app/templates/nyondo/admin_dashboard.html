@@ -15,7 +15,7 @@
             <h1>Admin Dashboard</h1>
 
             <p>
-                Complete business overview, sales analytics and system monitoring.
+                Complete business overview and inventory monitoring.
             </p>
 
         </div>
@@ -23,10 +23,13 @@
     </div>
 
     <div class="header-actions">
-    <a href="{% url 'register' %}" class="register-btn">
-        + Register User
-    </a>
-</div>
+        <a href="{% url 'register' %}" class="register-btn">
+            + Register User
+        </a>
+        <a href="{% url 'add_supplier' %}" class="register-btn" style="margin-left:12px;">
+            + Register Supplier
+        </a>
+    </div>
 
     <!-- ================= MAIN STATS ================= -->
 
@@ -43,34 +46,8 @@
         </div>
 
         <div class="stat-card">
-            <h3>Profit Margin</h3>
-            <h2>{{ profit_margin }}%</h2>
-        </div>
-
-        <div class="stat-card">
             <h3>Stock Value</h3>
             <h2>UGX {{ stock_value|floatformat:0|intcomma }}</h2>
-        </div>
-
-        <div class="stat-card">
-            <h3>Total Orders</h3>
-            <h2>{{ total_orders }}</h2>
-        </div>
-
-        <div class="stat-card">
-            <h3>Items Sold</h3>
-            <h2>{{ total_items_sold }}</h2>
-        </div>
-
-        <div class="stat-card">
-            <h3>Total Products</h3>
-            <h2>{{ total_products }}</h2>
-        </div>
-
-        <div class="stat-card audit-card">
-            <h3>Audit Entries</h3>
-            <h2>{{ audit_count }}</h2>
-            <small>{{ recent_audits.count }} recent activities</small>
         </div>
 
         <div class="stat-card">
@@ -80,7 +57,7 @@
 
     </div>
 
-    <!-- ================= MINI CARDS ================= -->
+    <!-- ================= ALERT CARDS ================= -->
 
     <div class="mini-grid">
 
@@ -94,24 +71,9 @@
             <h2>{{ out_of_stock }}</h2>
         </div>
 
-        <div class="mini-card success">
-            <h4>Cleared Credit</h4>
-            <h2>{{ cleared_credit }}</h2>
-        </div>
-
         <div class="mini-card pending">
             <h4>Pending Credit</h4>
             <h2>{{ pending_credit }}</h2>
-        </div>
-
-        <div class="mini-card">
-            <h4>Free Deliveries</h4>
-            <h2>{{ free_deliveries }}</h2>
-        </div>
-
-        <div class="mini-card">
-            <h4>Paid Deliveries</h4>
-            <h2>{{ charged_deliveries }}</h2>
         </div>
 
     </div>
@@ -218,8 +180,6 @@
 
         <div class="side-panel">
 
-            <!-- ================= TOP PRODUCTS ================= -->
-
             <div class="panel-card">
 
                 <div class="section-header">
@@ -261,97 +221,6 @@
                 </div>
 
             </div>
-
-            <!-- ================= AUDIT INSIGHT ================= -->
-
-            <div class="insight-card">
-
-                <h3>System Monitoring</h3>
-
-                <p>
-                    The audit system tracks user actions,
-                    updates and operational activities
-                    across the platform in real time.
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- ================= AUDIT TABLE ================= -->
-
-    <div class="table-section">
-
-        <div class="section-header">
-            <h2>Recent Audit Activity</h2>
-        </div>
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>User</th>
-                        <th>Action</th>
-                        <th>Model</th>
-                        <th>Object ID</th>
-                        <th>Description</th>
-                        <th>Date</th>
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    {% for log in recent_audits %}
-
-                    <tr>
-
-                        <td>{{ log.user.username|default:"System" }}</td>
-
-                        <td>
-
-                            <span class="action-badge">
-                                {{ log.get_action_display }}
-                            </span>
-
-                        </td>
-
-                        <td>{{ log.model_name|default:"N/A" }}</td>
-
-                        <td>{{ log.object_id|default:"-" }}</td>
-
-                        <td>{{ log.description }}</td>
-
-                        <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
-
-                    </tr>
-
-                    {% empty %}
-
-                    <tr>
-
-                        <td colspan="6">
-
-                            <div class="empty-state">
-
-                                <h3>No Audit Activity</h3>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
 
         </div>
 

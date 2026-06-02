@@ -3,6 +3,57 @@
 
 {% block content %}
 
+<style>
+    /* Styling the Role Dropdown (the "select thingy") */
+    .form-select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        font-size: 15px;
+        color: #333;
+        margin-top: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        outline: none;
+        appearance: none; /* Removes default browser styling */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23333' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 15px center;
+    }
+
+    .form-select:hover {
+        border-color: #2f1f45;
+        background-color: #fff;
+    }
+
+    .form-select:focus {
+        border-color: #2f1f45;
+        box-shadow: 0 0 0 3px rgba(47, 31, 69, 0.15);
+        background-color: #fff;
+    }
+
+    .role-badge {
+        background-color: #f0ecf7;
+        color: #2f1f45;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+    .delete-btn {
+        background: #e74c3c;
+        color: #fff;
+        border: none;
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+    .delete-btn:hover { opacity: 0.9; }
+</style>
+
 <div class="users-container">
 
     <!-- SUCCESS MESSAGE -->
@@ -53,26 +104,38 @@
                     <th>ID</th>
                     <th>Username</th>
                     <th>Date Joined</th>
+                    <th>Role</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
 
             </thead>
 
             <tbody>
 
-                {% for user in users %}
+                {% for u in users %}
 
                 <tr>
 
-                    <td>{{ user.id }}</td>
+                    <td>{{ u.id }}</td>
 
-                    <td>{{ user.username }}</td>
+                    <td>{{ u.username }}</td>
 
-                    <td>{{ user.date_joined }}</td>
+                    <td>{{ u.date_joined }}</td>
+
+                    <td>
+                        {% for group in u.groups.all %}
+                            <span class="role-badge">
+                                {{ group.name }}
+                            </span>
+                        {% empty %}
+                            <small class="text-muted">No Role</small>
+                        {% endfor %}
+                    </td>
 
                     <td>
 
-                        {% if user.is_active %}
+                        {% if u.is_active %}
 
                         <span class="active-badge">
                             Active
@@ -88,13 +151,24 @@
 
                     </td>
 
+                    <td>
+                        {% if not u == user and user.is_superuser %}
+                        <form method="post" action="{% url 'delete_user' u.id %}" onsubmit="return confirm('Delete user {{ u.username }}? This action cannot be undone.');">
+                            {% csrf_token %}
+                            <button type="submit" class="delete-btn">Delete</button>
+                        </form>
+                        {% else %}
+                            <small class="text-muted">—</small>
+                        {% endif %}
+                    </td>
+
                 </tr>
 
                 {% empty %}
 
                 <tr>
 
-                    <td colspan="4" class="empty-row">
+                    <td colspan="5" class="empty-row">
                         No users available
                     </td>
 
@@ -138,6 +212,15 @@
 
             </div>
 
+            <div class="form-group">
+
+                <label>System Role</label>
+
+                {{ form.role }}
+
+            </div>
+
+           
             <div class="form-group">
 
                 <label>Password</label>

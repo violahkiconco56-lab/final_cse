@@ -6,6 +6,84 @@
     <title>Add Supplier Credit</title>
 
     <link rel="stylesheet" href="{% static 'nyondo_app/css/nyondo/add_credit.css' %}">
+    
+    <style>
+        /* Error message styles - doesn't change your design */
+        .field {
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .field-error {
+            border-color: #e74c3c !important;
+            background-color: rgba(231, 76, 60, 0.05);
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.7rem;
+            margin-top: 4px;
+            display: none;
+            font-weight: 500;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        input.field-error, select.field-error, textarea.field-error {
+            border: 1px solid #e74c3c;
+        }
+        
+        /* Make form inputs consistent */
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        label {
+            font-weight: 500;
+            display: block;
+            margin-top: 10px;
+        }
+        
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #2f1f45;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #1f1235;
+        }
+        
+        .actions-row {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .back {
+            text-decoration: none;
+            padding: 8px 15px;
+            background: #6c757d;
+            color: white;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .back:hover {
+            background: #5a6268;
+        }
+    </style>
 </head>
 
 <body>
@@ -14,19 +92,228 @@
 
     <h2>Add Supplier Credit</h2>
 
-    <form method="POST">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="msg" style="padding: 10px; margin-bottom: 15px; border-radius: 4px; background: {% if message.tags == 'error' %}#f8d7da{% else %}#d4edda{% endif %}; color: {% if message.tags == 'error' %}#721c24{% else %}#155724{% endif %};">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
 
+    <form method="POST" id="creditForm">
         {% csrf_token %}
 
-        {{ form.as_p }}
+        <div class="field">
+            <label>Supplier *</label>
+            <select name="supplier" id="supplier">
+                <option value="">Select Supplier</option>
+                {% for supplier in form.supplier.field.queryset %}
+                <option value="{{ supplier.id }}" {% if form.supplier.value|stringformat:"s" == supplier.id|stringformat:"s" %}selected{% endif %}>
+                    {{ supplier.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <div class="error-message" id="supplier_error"></div>
+        </div>
+
+        <div class="field">
+            <label>Product Name *</label>
+            <input type="text" name="product_name" id="product_name" placeholder="Enter product name" value="{{ form.product_name.value|default:'' }}">
+            <div class="error-message" id="product_name_error"></div>
+        </div>
+
+        <div class="field">
+            <label>Quantity *</label>
+            <input type="number" name="quantity" id="quantity" placeholder="Enter quantity" step="1" value="{{ form.quantity.value|default:'' }}">
+            <div class="error-message" id="quantity_error"></div>
+        </div>
+
+        <div class="field">
+            <label>Unit Cost (UGX) *</label>
+            <input type="number" name="unit_cost" id="unit_cost" placeholder="Enter unit cost" step="0.01" value="{{ form.unit_cost.value|default:'' }}">
+            <div class="error-message" id="unit_cost_error"></div>
+        </div>
+
+        <div class="field">
+            <label>Amount Paid (UGX)</label>
+            <input type="number" name="amount_paid" id="amount_paid" placeholder="Enter amount paid" step="0.01" value="{{ form.amount_paid.value|default:'0' }}">
+            <div class="error-message" id="amount_paid_error"></div>
+        </div>
+
+        <div class="field">
+            <label>Notes</label>
+            <textarea name="notes" id="notes" rows="3" placeholder="Enter any notes">{{ form.notes.value|default:'' }}</textarea>
+            <div class="error-message" id="notes_error"></div>
+        </div>
 
         <button type="submit">Save Credit</button>
 
     </form>
 
-    <a href="{% url 'credit_list' %}" class="back">← Back to Credit List</a>
+    <div class="actions-row">
+        <a href="{% url 'supplier_list' %}" class="back">+ Register Supplier</a>
+        <a href="{% url 'credit_list' %}" class="back">← Back to Credit List</a>
+        <a href="{% url 'admin_dashboard' %}" class="back">← Back to Dashboard</a>
+    </div>
 
 </div>
+
+<script>
+    (function() {
+        'use strict';
+        
+        const form = document.getElementById('creditForm');
+        
+        // Get all form fields
+        const supplier = document.getElementById('supplier');
+        const productName = document.getElementById('product_name');
+        const quantity = document.getElementById('quantity');
+        const unitCost = document.getElementById('unit_cost');
+        const amountPaid = document.getElementById('amount_paid');
+        const notes = document.getElementById('notes');
+        
+        // Error message elements
+        const supplierError = document.getElementById('supplier_error');
+        const productNameError = document.getElementById('product_name_error');
+        const quantityError = document.getElementById('quantity_error');
+        const unitCostError = document.getElementById('unit_cost_error');
+        const amountPaidError = document.getElementById('amount_paid_error');
+        const notesError = document.getElementById('notes_error');
+        
+        function clearFieldErrors() {
+            const fields = [supplier, productName, quantity, unitCost, amountPaid, notes];
+            fields.forEach(function(field) {
+                if (field) field.classList.remove('field-error');
+            });
+            
+            const errorElements = [supplierError, productNameError, quantityError, unitCostError, amountPaidError, notesError];
+            errorElements.forEach(function(error) {
+                if (error) {
+                    error.classList.remove('show');
+                    error.textContent = '';
+                }
+            });
+        }
+        
+        function showFieldError(field, errorElement, message) {
+            if (field) field.classList.add('field-error');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.classList.add('show');
+            }
+        }
+        
+        // Clear errors when user types
+        const inputFields = [supplier, productName, quantity, unitCost, amountPaid, notes];
+        inputFields.forEach(function(field) {
+            if (field) {
+                field.addEventListener('input', function() {
+                    field.classList.remove('field-error');
+                    const errorId = field.id + '_error';
+                    const errorElement = document.getElementById(errorId);
+                    if (errorElement) {
+                        errorElement.classList.remove('show');
+                        errorElement.textContent = '';
+                    }
+                });
+                field.addEventListener('change', function() {
+                    field.classList.remove('field-error');
+                    const errorId = field.id + '_error';
+                    const errorElement = document.getElementById(errorId);
+                    if (errorElement) {
+                        errorElement.classList.remove('show');
+                        errorElement.textContent = '';
+                    }
+                });
+            }
+        });
+        
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                clearFieldErrors();
+                let isValid = true;
+                
+                // Get values
+                const supplierVal = supplier ? supplier.value : '';
+                const productNameVal = productName ? productName.value.trim() : '';
+                const quantityVal = quantity ? quantity.value : '';
+                const unitCostVal = unitCost ? unitCost.value : '';
+                const amountPaidVal = amountPaid ? amountPaid.value : 0;
+                const notesVal = notes ? notes.value.trim() : '';
+                
+                // Supplier validation (required)
+                if (!supplierVal) {
+                    showFieldError(supplier, supplierError, 'Please select a supplier');
+                    isValid = false;
+                }
+                
+                // Product Name validation (required)
+                if (!productNameVal) {
+                    showFieldError(productName, productNameError, 'Product name is required');
+                    isValid = false;
+                } else if (productNameVal.length < 2) {
+                    showFieldError(productName, productNameError, 'Product name must be at least 2 characters');
+                    isValid = false;
+                } else if (productNameVal.length > 200) {
+                    showFieldError(productName, productNameError, 'Product name must not exceed 200 characters');
+                    isValid = false;
+                }
+                
+                // Quantity validation (required)
+                if (!quantityVal && quantityVal !== 0) {
+                    showFieldError(quantity, quantityError, 'Quantity is required');
+                    isValid = false;
+                } else if (parseFloat(quantityVal) <= 0) {
+                    showFieldError(quantity, quantityError, 'Quantity must be greater than 0');
+                    isValid = false;
+                } else if (!/^\d+$/.test(quantityVal)) {
+                    showFieldError(quantity, quantityError, 'Please enter a valid whole number');
+                    isValid = false;
+                }
+                
+                // Unit Cost validation (required)
+                if (!unitCostVal && unitCostVal !== 0) {
+                    showFieldError(unitCost, unitCostError, 'Unit cost is required');
+                    isValid = false;
+                } else if (parseFloat(unitCostVal) <= 0) {
+                    showFieldError(unitCost, unitCostError, 'Unit cost must be greater than 0');
+                    isValid = false;
+                } else if (parseFloat(unitCostVal) < 0) {
+                    showFieldError(unitCost, unitCostError, 'Unit cost cannot be negative');
+                    isValid = false;
+                }
+                
+                // Calculate total cost
+                let totalCost = 0;
+                if (quantityVal && unitCostVal && parseFloat(quantityVal) > 0 && parseFloat(unitCostVal) > 0) {
+                    totalCost = parseFloat(quantityVal) * parseFloat(unitCostVal);
+                }
+                
+                // Amount Paid validation (optional)
+                if (amountPaidVal && amountPaidVal !== '') {
+                    const amountPaidNum = parseFloat(amountPaidVal);
+                    if (amountPaidNum < 0) {
+                        showFieldError(amountPaid, amountPaidError, 'Amount paid cannot be negative');
+                        isValid = false;
+                    } else if (totalCost > 0 && amountPaidNum > totalCost) {
+                        showFieldError(amountPaid, amountPaidError, 'Amount paid cannot exceed total cost (UGX ' + totalCost.toLocaleString() + ')');
+                        isValid = false;
+                    }
+                }
+                
+                // Notes validation (optional)
+                if (notesVal && notesVal.length > 500) {
+                    showFieldError(notes, notesError, 'Notes must not exceed 500 characters');
+                    isValid = false;
+                }
+                
+                if (!isValid) {
+                    e.preventDefault();
+                }
+            });
+        }
+    })();
+</script>
 
 </body>
 </html>

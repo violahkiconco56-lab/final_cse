@@ -22,6 +22,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
+    path('register/delete/<int:user_id>/', views.delete_user, name='delete_user'),
     path('logout/', views.logout_view, name='logout'),
     #dashboard view
     path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
@@ -54,6 +55,8 @@ urlpatterns = [
     path("supplier-credits/add/", views.add_credit, name="add_credit"),
     path("supplier-credits/edit/<int:pk>/", views.edit_credit, name="edit_credit"),
     path("supplier-credits/delete/<int:pk>/", views.delete_credit, name="delete_credit"),
+    path("suppliers/", views.supplier_list, name="supplier_list"),
+    path("suppliers/add/", views.add_supplier, name="add_supplier"),
     
 
     # deposit scheme management

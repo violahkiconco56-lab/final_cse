@@ -5,63 +5,103 @@
 
 {% block content %}
 
+<style>
+    /* Error message styles - doesn't change your design */
+    .field {
+        margin-bottom: 15px;
+        position: relative;
+    }
+    
+    .field-error {
+        border-color: #e74c3c !important;
+        background-color: rgba(231, 76, 60, 0.05);
+    }
+    
+    .error-message {
+        color: #e74c3c;
+        font-size: 0.7rem;
+        margin-top: 4px;
+        display: none;
+        font-weight: 500;
+    }
+    
+    .error-message.show {
+        display: block;
+    }
+    
+    input.field-error, select.field-error, textarea.field-error {
+        border: 1px solid #e74c3c;
+    }
+</style>
+
 <div class="form-container">
 
     <h2>Add Stock</h2>
 
-    <form method="POST">
+    <form method="POST" id="stockForm">
         {% csrf_token %}
-
-        {{ form.non_field_errors }}
 
         <div class="grid">
 
             <div class="field">
-                <label>Product Name</label>
-                {{ form.product_name }}
-                {{ form.product_name.errors }}
+                <label>Product Name *</label>
+                <input type="text" name="product_name" id="product_name" placeholder="Enter product name" value="{{ form.product_name.value|default:'' }}">
+                <div class="error-message" id="product_name_error"></div>
             </div>
 
             <div class="field">
-                <label>Category</label>
-                {{ form.category }}
-                {{ form.category.errors }}
+                <label>Category *</label>
+                <select name="category" id="category">
+                    <option value="">Select Category</option>
+                    <option value="cement" {% if form.category.value == 'cement' %}selected{% endif %}>Cement</option>
+                    <option value="iron_sheets" {% if form.category.value == 'iron_sheets' %}selected{% endif %}>Iron Sheets</option>
+                    <option value="iron_bars" {% if form.category.value == 'iron_bars' %}selected{% endif %}>Iron Bars</option>
+                    <option value="nails" {% if form.category.value == 'nails' %}selected{% endif %}>Nails</option>
+                    <option value="wire_mesh" {% if form.category.value == 'wire_mesh' %}selected{% endif %}>Wire Mesh</option>
+                    <option value="barbed_wire" {% if form.category.value == 'barbed_wire' %}selected{% endif %}>Barbed Wire</option>
+                    <option value="wheelbarrows" {% if form.category.value == 'wheelbarrows' %}selected{% endif %}>Wheelbarrows</option>
+                    <option value="paint" {% if form.category.value == 'paint' %}selected{% endif %}>Paint</option>
+                    <option value="tools" {% if form.category.value == 'tools' %}selected{% endif %}>Tools</option>
+                    <option value="other" {% if form.category.value == 'other' %}selected{% endif %}>Other</option>
+                </select>
+                <div class="error-message" id="category_error"></div>
             </div>
 
             <div class="field">
-                <label>Quantity</label>
-                {{ form.quantity }}
-                {{ form.quantity.errors }}
+                <label>Quantity *</label>
+                <input type="number" name="quantity" id="quantity" placeholder="Enter quantity" step="1" value="{{ form.quantity.value|default:'' }}">
+                <div class="error-message" id="quantity_error"></div>
             </div>
 
             <div class="field">
-                <label>Buying Price</label>
-                {{ form.buying_price }}
-                {{ form.buying_price.errors }}
+                <label>Buying Price (UGX) *</label>
+                <input type="number" name="buying_price" id="buying_price" placeholder="Enter buying price" step="0.01" value="{{ form.buying_price.value|default:'' }}">
+                <div class="error-message" id="buying_price_error"></div>
             </div>
 
             <div class="field">
-                <label>Selling Price</label>
-                {{ form.selling_price }}
-                {{ form.selling_price.errors }}
+                <label>Selling Price (UGX) *</label>
+                <input type="number" name="selling_price" id="selling_price" placeholder="Enter selling price" step="0.01" value="{{ form.selling_price.value|default:'' }}">
+                <div class="error-message" id="selling_price_error"></div>
             </div>
 
             <div class="field">
                 <label>Supplier</label>
-                {{ form.supplier_name }}
-                {{ form.supplier_name.errors }}
+                <input type="text" name="supplier_name" id="supplier_name" placeholder="Enter supplier name" value="{{ form.supplier_name.value|default:'' }}">
+                <div class="error-message" id="supplier_name_error"></div>
             </div>
 
             <div class="field full">
-                <label>Description</label>
-                {{ form.description }}
-                {{ form.description.errors }}
+                <label>Description (Max 20 characters)</label>
+                <textarea name="description" id="description" rows="3" placeholder="Enter product description (max 20 characters)" maxlength="20">{{ form.description.value|default:'' }}</textarea>
+                <div class="error-message" id="description_error"></div>
+                <small style="color: #666; font-size: 0.7rem;" id="description_char_count">0 / 20 characters</small>
             </div>
 
             <div class="field">
                 <label>Reorder Level</label>
-                {{ form.reorder_level }}
-                {{ form.reorder_level.errors }}
+                <input type="number" name="reorder_level" id="reorder_level" placeholder="Enter reorder level" step="1" value="{{ form.reorder_level.value|default:'' }}">
+                <div class="error-message" id="reorder_level_error"></div>
             </div>
 
         </div>
@@ -81,5 +121,205 @@
 </div>
 
 <link rel="stylesheet" href="{% static 'nyondo_app/css/nyondo/add_stock.css' %}">
+
+<script>
+    (function() {
+        const form = document.getElementById('stockForm');
+        
+        // Get all form fields
+        const productName = document.getElementById('product_name');
+        const category = document.getElementById('category');
+        const quantity = document.getElementById('quantity');
+        const buyingPrice = document.getElementById('buying_price');
+        const sellingPrice = document.getElementById('selling_price');
+        const supplierName = document.getElementById('supplier_name');
+        const description = document.getElementById('description');
+        const reorderLevel = document.getElementById('reorder_level');
+        
+        // Error message elements
+        const productNameError = document.getElementById('product_name_error');
+        const categoryError = document.getElementById('category_error');
+        const quantityError = document.getElementById('quantity_error');
+        const buyingPriceError = document.getElementById('buying_price_error');
+        const sellingPriceError = document.getElementById('selling_price_error');
+        const supplierNameError = document.getElementById('supplier_name_error');
+        const descriptionError = document.getElementById('description_error');
+        const reorderLevelError = document.getElementById('reorder_level_error');
+        
+        // Character counter for description
+        const descriptionCharCount = document.getElementById('description_char_count');
+        
+        function clearFieldErrors() {
+            const fields = [productName, category, quantity, buyingPrice, sellingPrice, supplierName, description, reorderLevel];
+            fields.forEach(field => {
+                if (field) field.classList.remove('field-error');
+            });
+            
+            const errorElements = [productNameError, categoryError, quantityError, buyingPriceError, sellingPriceError, supplierNameError, descriptionError, reorderLevelError];
+            errorElements.forEach(error => {
+                if (error) {
+                    error.classList.remove('show');
+                    error.textContent = '';
+                }
+            });
+        }
+        
+        function showFieldError(field, errorElement, message) {
+            if (field) field.classList.add('field-error');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.classList.add('show');
+            }
+        }
+        
+        // Update character count for description
+        if (description) {
+            function updateCharCount() {
+                const currentLength = description.value.length;
+                descriptionCharCount.textContent = currentLength + ' / 20 characters';
+                if (currentLength >= 20) {
+                    descriptionCharCount.style.color = '#e74c3c';
+                } else {
+                    descriptionCharCount.style.color = '#666';
+                }
+            }
+            
+            description.addEventListener('input', updateCharCount);
+            updateCharCount(); // Initialize counter
+        }
+        
+        // Clear errors when user types
+        const inputFields = [productName, category, quantity, buyingPrice, sellingPrice, supplierName, description, reorderLevel];
+        inputFields.forEach(field => {
+            if (field) {
+                field.addEventListener('input', function() {
+                    field.classList.remove('field-error');
+                    const errorId = field.id + '_error';
+                    const errorElement = document.getElementById(errorId);
+                    if (errorElement) {
+                        errorElement.classList.remove('show');
+                        errorElement.textContent = '';
+                    }
+                });
+                field.addEventListener('change', function() {
+                    field.classList.remove('field-error');
+                    const errorId = field.id + '_error';
+                    const errorElement = document.getElementById(errorId);
+                    if (errorElement) {
+                        errorElement.classList.remove('show');
+                        errorElement.textContent = '';
+                    }
+                });
+            }
+        });
+        
+        form.addEventListener('submit', function(e) {
+            clearFieldErrors();
+            let isValid = true;
+            
+            // Get values
+            const productNameVal = productName ? productName.value.trim() : '';
+            const categoryVal = category ? category.value : '';
+            const quantityVal = quantity ? quantity.value : '';
+            const buyingPriceVal = buyingPrice ? buyingPrice.value : '';
+            const sellingPriceVal = sellingPrice ? sellingPrice.value : '';
+            const supplierNameVal = supplierName ? supplierName.value.trim() : '';
+            const descriptionVal = description ? description.value.trim() : '';
+            const reorderLevelVal = reorderLevel ? reorderLevel.value : '';
+            
+            // Product Name validation
+            if (!productNameVal) {
+                showFieldError(productName, productNameError, 'Product name is required');
+                isValid = false;
+            } else if (productNameVal.length < 2) {
+                showFieldError(productName, productNameError, 'Product name must be at least 2 characters');
+                isValid = false;
+            } else if (productNameVal.length > 200) {
+                showFieldError(productName, productNameError, 'Product name must not exceed 200 characters');
+                isValid = false;
+            }
+            
+            // Category validation
+            if (!categoryVal) {
+                showFieldError(category, categoryError, 'Please select a category');
+                isValid = false;
+            }
+            
+            // Quantity validation - MUST BE ABOVE 0
+            if (!quantityVal && quantityVal !== 0) {
+                showFieldError(quantity, quantityError, 'Quantity is required');
+                isValid = false;
+            } else if (parseFloat(quantityVal) <= 0) {
+                showFieldError(quantity, quantityError, 'Quantity must be greater than 0');
+                isValid = false;
+            } else if (!/^\d+$/.test(quantityVal)) {
+                showFieldError(quantity, quantityError, 'Please enter a valid whole number');
+                isValid = false;
+            }
+            
+            // Buying Price validation
+            if (!buyingPriceVal && buyingPriceVal !== 0) {
+                showFieldError(buyingPrice, buyingPriceError, 'Buying price is required');
+                isValid = false;
+            } else if (parseFloat(buyingPriceVal) < 0) {
+                showFieldError(buyingPrice, buyingPriceError, 'Buying price cannot be negative');
+                isValid = false;
+            } else if (parseFloat(buyingPriceVal) === 0) {
+                showFieldError(buyingPrice, buyingPriceError, 'Buying price must be greater than 0');
+                isValid = false;
+            }
+            
+            // Selling Price validation
+            if (!sellingPriceVal && sellingPriceVal !== 0) {
+                showFieldError(sellingPrice, sellingPriceError, 'Selling price is required');
+                isValid = false;
+            } else if (parseFloat(sellingPriceVal) < 0) {
+                showFieldError(sellingPrice, sellingPriceError, 'Selling price cannot be negative');
+                isValid = false;
+            } else if (parseFloat(sellingPriceVal) === 0) {
+                showFieldError(sellingPrice, sellingPriceError, 'Selling price must be greater than 0');
+                isValid = false;
+            }
+            
+            // Selling Price vs Buying Price validation
+            if (buyingPriceVal && sellingPriceVal && parseFloat(buyingPriceVal) > 0 && parseFloat(sellingPriceVal) > 0) {
+                if (parseFloat(sellingPriceVal) <= parseFloat(buyingPriceVal)) {
+                    showFieldError(sellingPrice, sellingPriceError, 'Selling price must be greater than buying price');
+                    isValid = false;
+                }
+            }
+            
+            // Supplier Name validation (optional but validate if provided)
+            if (supplierNameVal && supplierNameVal.length < 2) {
+                showFieldError(supplierName, supplierNameError, 'Supplier name must be at least 2 characters');
+                isValid = false;
+            } else if (supplierNameVal && supplierNameVal.length > 100) {
+                showFieldError(supplierName, supplierNameError, 'Supplier name must not exceed 100 characters');
+                isValid = false;
+            }
+            
+            // Description validation - MAX 20 CHARACTERS
+            if (descriptionVal && descriptionVal.length > 20) {
+                showFieldError(description, descriptionError, 'Description must not exceed 20 characters');
+                isValid = false;
+            }
+            
+            // Reorder Level validation (optional)
+            if (reorderLevelVal && reorderLevelVal !== '') {
+                if (parseFloat(reorderLevelVal) < 0) {
+                    showFieldError(reorderLevel, reorderLevelError, 'Reorder level cannot be negative');
+                    isValid = false;
+                } else if (!/^\d+$/.test(reorderLevelVal)) {
+                    showFieldError(reorderLevel, reorderLevelError, 'Please enter a valid whole number');
+                    isValid = false;
+                }
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+    })();
+</script>
 
 {% endblock %}

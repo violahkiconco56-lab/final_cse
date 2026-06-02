@@ -8,32 +8,49 @@
 
     <link rel="stylesheet" href="{% static 'nyondo_app/css/accounts/login.css' %}">
 
+    <style>
+        /* Additional styles for inline validation – does not change your design */
+        .form-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .field-error {
+            border-color: #e74c3c !important;
+            background-color: rgba(231, 76, 60, 0.05);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.75rem;
+            margin-top: 5px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+    </style>
 </head>
 
-<body style="background-image: linear-gradient(rgba(47, 31, 69, 0.48), rgba(47, 31, 69, 0.48)), url('{% static 'nyondo_app/images/hardware.jpeg' %}?v=20260526');">
+<body style="background-image: linear-gradient(rgba(47, 31, 69, 0.48), rgba(47, 31, 69, 0.48)), url('{% static 'nyondo_app/images/hardware.jpeg' %}?v=20260526'); background-size: cover; background-position: center; background-repeat: no-repeat;">
 
 <div class="login-card">
 
     <!-- LOGO -->
-
     <div class="logo">
-
         <h1>
             Nyondo <span>Hardware</span>
         </h1>
-
         <p>
             Stock & Sales Management System
         </p>
-
     </div>
 
-    <!-- DJANGO MESSAGES -->
-
+    <!-- DJANGO MESSAGES (server‑side errors) -->
     {% if messages %}
-
         {% for message in messages %}
-
             <div class="message 
                 {% if message.tags == 'error' %}
                     error
@@ -41,62 +58,110 @@
                     success
                 {% endif %}
             ">
-
                 {{ message }}
-
             </div>
-
         {% endfor %}
-
     {% endif %}
 
     <!-- LOGIN FORM -->
-
-    <form method="POST">
-
+    <form method="POST" id="loginForm">
         {% csrf_token %}
 
         <div class="form-group">
-
             <label>Username</label>
-
-            <input
-                type="text"
-                name="username"
-                placeholder="Enter username"
-                required
-            >
-
+            <input type="text" name="username" id="username" placeholder="Enter username">
+            <div class="error-message" id="usernameError"></div>
         </div>
 
         <div class="form-group">
-
             <label>Password</label>
-
-            <input
-                type="password"
-                name="password"
-                placeholder="Enter password"
-                required
-            >
-
+            <input type="password" name="password" id="password" placeholder="Enter password">
+            <div class="error-message" id="passwordError"></div>
         </div>
 
         <button type="submit" class="btn">
             Login
         </button>
-
     </form>
 
     <!-- FOOTER -->
-
     <div class="footer">
-
         Secure Inventory & POS System
-
     </div>
 
 </div>
+
+<script>
+    (function() {
+        const form = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const usernameError = document.getElementById('usernameError');
+        const passwordError = document.getElementById('passwordError');
+
+        function clearFieldErrors() {
+            usernameInput.classList.remove('field-error');
+            passwordInput.classList.remove('field-error');
+            usernameError.classList.remove('show');
+            passwordError.classList.remove('show');
+            usernameError.textContent = '';
+            passwordError.textContent = '';
+        }
+
+        function showFieldError(field, errorElement, message) {
+            field.classList.add('field-error');
+            errorElement.textContent = message;
+            errorElement.classList.add('show');
+        }
+
+        // Real‑time clearing when user types
+        usernameInput.addEventListener('input', function() {
+            usernameInput.classList.remove('field-error');
+            usernameError.classList.remove('show');
+        });
+        passwordInput.addEventListener('input', function() {
+            passwordInput.classList.remove('field-error');
+            passwordError.classList.remove('show');
+        });
+
+        form.addEventListener('submit', function(e) {
+            clearFieldErrors();
+            let isValid = true;
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            // Username validation
+            if (!username) {
+                showFieldError(usernameInput, usernameError, 'Username is required');
+                isValid = false;
+            } else if (username.length < 3) {
+                showFieldError(usernameInput, usernameError, 'Username must be at least 3 characters');
+                isValid = false;
+            } else if (username.length > 150) {
+                showFieldError(usernameInput, usernameError, 'Username must not exceed 150 characters');
+                isValid = false;
+            } else if (!/^[A-Za-z0-9@.+-_]+$/.test(username)) {
+                showFieldError(usernameInput, usernameError, 'Username contains invalid characters');
+                isValid = false;
+            }
+
+            // Password validation
+            if (!password) {
+                showFieldError(passwordInput, passwordError, 'Password is required');
+                isValid = false;
+            } else if (password.length < 4) {
+                showFieldError(passwordInput, passwordError, 'Password must be at least 4 characters');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+            }
+            // If valid, form submits normally to Django for authentication
+        });
+    })();
+</script>
 
 </body>
 </html>

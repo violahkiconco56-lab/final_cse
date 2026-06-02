@@ -15,9 +15,17 @@
     <div class="top-bar">
         <h2>Supplier Credit List</h2>
 
-        <a href="{% url 'add_credit' %}" class="btn btn-add">
-            + Add Credit
-        </a>
+        <div class="top-actions">
+            <a href="{% url 'add_credit' %}" class="btn btn-add">
+                + Add Credit
+            </a>
+            <a href="{% url 'supplier_list' %}" class="btn btn-secondary">
+                + Suppliers
+            </a>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
+                ← Back to Dashboard
+            </a>
+        </div>
     </div>
 
     <table>
@@ -38,7 +46,7 @@
         <tr>
 
             <td>{{ credit.supplier.name }}</td>
-            <td>{{ credit.item_name }}</td>
+            <td>{{ credit.product_name }}</td>
             <td>{{ credit.quantity }}</td>
             <td>{{ credit.total_cost }}</td>
             <td>{{ credit.amount_paid }}</td>

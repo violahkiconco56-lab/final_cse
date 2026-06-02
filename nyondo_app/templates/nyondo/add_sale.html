@@ -1,4 +1,4 @@
-{% extends "nyondo/base.html" %}
+add_sales {% extends "nyondo/base.html" %}
 {% load static %}
 {% block content %}
 
@@ -66,7 +66,8 @@
         </div>
 
         <div class="buttons">
-            <button type="submit" class="btn-save">Save Sale</button>
+            <button type="submit" name="action" value="update_price" class="btn-secondary">Update Price</button>
+            <button type="submit" name="action" value="save" class="btn-save">Save Sale</button>
             <a href="{% url 'sales_list' %}" class="btn-back">Back to Sales List</a>
         </div>
 

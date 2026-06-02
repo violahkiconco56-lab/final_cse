@@ -1,5 +1,5 @@
 from django import forms
-from .models import Stock, Sales, SupplierCredit, DepositScheme
+from .models import Stock, Sales, SupplierCredit, DepositScheme, Supplier
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm
 
@@ -84,7 +84,7 @@ class SupplierCreditForm(forms.ModelForm):
         ]
 
         widgets = {
-            "supplier": forms.Select(),
+            "supplier": forms.Select(attrs={"class": "form-select"}),
             "product_name": forms.TextInput(attrs={"placeholder": "Item name"}),
             "quantity": forms.NumberInput(attrs={"min": 1}),
             "unit_cost": forms.NumberInput(attrs={"step": "0.01"}),
@@ -119,6 +119,64 @@ class SupplierCreditForm(forms.ModelForm):
                     "amount_paid",
                     "Amount paid cannot exceed total cost."
                 )
+
+        return cleaned_data
+
+
+class SupplierForm(forms.ModelForm):
+
+    class Meta:
+        model = Supplier
+        fields = ["name", "contact", "address"]
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "Supplier name"}),
+            "contact": forms.TextInput(attrs={"placeholder": "Phone or contact"}),
+            "address": forms.Textarea(attrs={"rows": 3, "placeholder": "Supplier address"}),
+        }
+
+    def clean_name(self):
+        return (self.cleaned_data.get("name") or "").strip()
+
+    def clean_contact(self):
+        return (self.cleaned_data.get("contact") or "").strip()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        contact = cleaned_data.get("contact")
+
+        if contact and not contact.isdigit():
+            self.add_error("contact", "Supplier contact should contain digits only")
+        if contact and len(contact) < 10:
+            self.add_error("contact", "Supplier contact must be at least 10 digits")
+
+        return cleaned_data
+
+
+class SupplierForm(forms.ModelForm):
+
+    class Meta:
+        model = Supplier
+        fields = ["name", "contact", "address"]
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "Supplier name"}),
+            "contact": forms.TextInput(attrs={"placeholder": "Phone or contact"}),
+            "address": forms.Textarea(attrs={"rows": 3, "placeholder": "Supplier address"}),
+        }
+
+    def clean_name(self):
+        return (self.cleaned_data.get("name") or "").strip()
+
+    def clean_contact(self):
+        return (self.cleaned_data.get("contact") or "").strip()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        contact = cleaned_data.get("contact")
+
+        if contact and not contact.isdigit():
+            self.add_error("contact", "Supplier contact should contain digits only")
+        if contact and len(contact) < 10:
+            self.add_error("contact", "Supplier contact must be at least 10 digits")
 
         return cleaned_data
 
@@ -212,7 +270,7 @@ class SaleForm(forms.ModelForm):
             "customer_phone": forms.TextInput(attrs={"placeholder": "Phone number"}),
             "product": forms.Select(),
             "quantity": forms.NumberInput(attrs={"min": 1}),
-            "unit_price": forms.NumberInput(attrs={"step": "0.01", "min": 0}),
+            "unit_price": forms.NumberInput(attrs={"step": "0.01", "min": 0, "readonly": "readonly"}),
             "distance_km": forms.NumberInput(attrs={"min": 0}),
             "payment_status": forms.Select(),
         }
@@ -270,30 +328,31 @@ class SaleForm(forms.ModelForm):
 class CustomUserCreationForm(UserCreationForm):
 
     ROLE_CHOICES = (
-        ("Sales", "Sales"),
-        ("Stock", "Stock"),
+        ("", "--- Select Role ---"),
+        ("sales", "Sales"),
+        ("stock", "Stock"),
+        ("admin", "Admin"),
     )
 
-    role = forms.ChoiceField(choices=ROLE_CHOICES)
+    role = forms.ChoiceField(
+        choices=ROLE_CHOICES, 
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
 
-    class Meta:
+    class Meta(UserCreationForm.Meta):
         model = User
-        fields = [
-            "username",
-            "password1",
-            "password2",
-            "role",
-        ]
+        # Explicitly list fields to ensure they appear in the correct order
+        fields = ("username", "role")
 
     def save(self, commit=True):
-        user = super().save(commit=False)
-
-        if commit:
-            user.save()
-
-            role = self.cleaned_data.get("role")
-
-            group, _ = Group.objects.get_or_create(name=role)
-            user.groups.add(group)
-
-        return user
+        user = super().save(commit=False) # Get the user instance, but don't save it yet
+        if commit: # If commit is True, save the user and then add to group
+            user.save() # Save the user to the database
+            role = self.cleaned_data.get("role") # Get the selected role
+            group, created = Group.objects.get_or_create(name=role) # Get or create the group
+            user.groups.add(group) # Add the user to the group
+        else: # If commit is False, the user is not saved, so group assignment cannot happen yet
+            # You might want to handle this case or ensure commit is always True for this form
+            pass 
+        return user # Return the user instance
