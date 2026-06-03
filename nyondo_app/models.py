@@ -199,8 +199,6 @@ class Sales(models.Model):
         if self.customer_phone:
             self.customer_phone = self.customer_phone.strip()
 
-        if not self.customer_name:
-            errors["customer_name"] = "Customer name is required."
         if self.customer_phone and not self.customer_phone.isdigit():
             errors["customer_phone"] = "Phone number should contain digits only."
         if self.customer_phone and len(self.customer_phone) < 10:

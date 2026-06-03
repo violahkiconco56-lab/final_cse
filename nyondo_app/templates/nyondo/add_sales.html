@@ -12,53 +12,101 @@
         {% endfor %}
     {% endif %}
 
-    <form method="POST">
-        {% csrf_token %}
+    {% if form.non_field_errors %}
+        <div class="msg" style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
 
-        {{ form.non_field_errors }}
+    <form method="POST" novalidate>
+        {% csrf_token %}
 
         <div class="grid">
 
-            <div class="field">
+            <div class="field{% if form.customer_name.errors %} field-error{% endif %}">
                 <label>Customer Name</label>
                 {{ form.customer_name }}
-                {{ form.customer_name.errors }}
+                {% if form.customer_name.errors %}
+                    <div class="error-message" style="color: #e74c3c; margin-top: 4px;">
+                        {% for error in form.customer_name.errors %}
+                            {{ error }}{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
 
-            <div class="field">
+            <div class="field{% if form.customer_phone.errors %} field-error{% endif %}">
                 <label>Phone Number</label>
                 {{ form.customer_phone }}
-                {{ form.customer_phone.errors }}
+                {% if form.customer_phone.errors %}
+                    <div class="error-message" style="color: #e74c3c; margin-top: 4px;">
+                        {% for error in form.customer_phone.errors %}
+                            {{ error }}{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
 
-            <div class="field">
+            <div class="field{% if form.product.errors %} field-error{% endif %}">
                 <label>Product</label>
                 {{ form.product }}
-                {{ form.product.errors }}
+                {% if form.product.errors %}
+                    <div class="error-message" style="color: #e74c3c; margin-top: 4px;">
+                        {% for error in form.product.errors %}
+                            {{ error }}{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
 
-            <div class="field">
+            <div class="field{% if form.unit_price.errors %} field-error{% endif %}">
                 <label>Unit Price</label>
                 {{ form.unit_price }}
-                {{ form.unit_price.errors }}
+                {% if form.unit_price.errors %}
+                    <div class="error-message" style="color: #e74c3c; margin-top: 4px;">
+                        {% for error in form.unit_price.errors %}
+                            {{ error }}{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
 
-            <div class="field">
+            <div class="field{% if form.quantity.errors %} field-error{% endif %}">
                 <label>Quantity</label>
                 {{ form.quantity }}
-                {{ form.quantity.errors }}
+                {% if form.quantity.errors %}
+                    <div class="error-message" style="color: #e74c3c; margin-top: 4px;">
+                        {% for error in form.quantity.errors %}
+                            {{ error }}{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
 
-            <div class="field">
-                <label>Distance (KM)</label>
+            <div class="field{% if form.distance_km.errors %} field-error{% endif %}">
+                <label>Distance (KM) *</label>
                 {{ form.distance_km }}
-                {{ form.distance_km.errors }}
+                {% if form.distance_km.errors %}
+                    <div class="error-message" style="color: #e74c3c; margin-top: 4px;">
+                        {% for error in form.distance_km.errors %}
+                            {{ error }}{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
 
-            <div class="field">
+            <div class="field{% if form.payment_status.errors %} field-error{% endif %}">
                 <label>Payment Status</label>
                 {{ form.payment_status }}
-                {{ form.payment_status.errors }}
+                {% if form.payment_status.errors %}
+                    <div class="error-message" style="color: #e74c3c; margin-top: 4px;">
+                        {% for error in form.payment_status.errors %}
+                            {{ error }}{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
 
         </div>

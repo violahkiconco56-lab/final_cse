@@ -100,12 +100,20 @@
         {% endfor %}
     {% endif %}
 
+    {% if form.non_field_errors %}
+        <div class="msg" style="padding: 10px; margin-bottom: 15px; border-radius: 4px; background: #f8d7da; color: #721c24;">
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <form method="POST" id="creditForm">
         {% csrf_token %}
 
-        <div class="field">
+        <div class="field{% if form.supplier.errors %} field-error{% endif %}">
             <label>Supplier *</label>
-            <select name="supplier" id="supplier">
+            <select name="supplier" id="supplier" {% if form.supplier.errors %}class="field-error"{% endif %}>
                 <option value="">Select Supplier</option>
                 {% for supplier in form.supplier.field.queryset %}
                 <option value="{{ supplier.id }}" {% if form.supplier.value|stringformat:"s" == supplier.id|stringformat:"s" %}selected{% endif %}>
@@ -113,37 +121,66 @@
                 </option>
                 {% endfor %}
             </select>
-            <div class="error-message" id="supplier_error"></div>
+            <div class="error-message" id="supplier_error">
+                {% for error in form.supplier.errors %}
+                    {{ error }}{% if not forloop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
         </div>
 
-        <div class="field">
+        <div class="field{% if form.product_name.errors %} field-error{% endif %}">
             <label>Product Name *</label>
-            <input type="text" name="product_name" id="product_name" placeholder="Enter product name" value="{{ form.product_name.value|default:'' }}">
-            <div class="error-message" id="product_name_error"></div>
+            <input type="text" name="product_name" id="product_name" placeholder="Enter product name" value="{{ form.product_name.value|default:'' }}" {% if form.product_name.errors %}class="field-error"{% endif %}>
+            <div class="error-message" id="product_name_error">
+                {% for error in form.product_name.errors %}
+                    {{ error }}{% if not forloop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
         </div>
 
-        <div class="field">
+        <div class="field{% if form.quantity.errors %} field-error{% endif %}">
             <label>Quantity *</label>
-            <input type="number" name="quantity" id="quantity" placeholder="Enter quantity" step="1" value="{{ form.quantity.value|default:'' }}">
-            <div class="error-message" id="quantity_error"></div>
+            <input type="number" name="quantity" id="quantity" placeholder="Enter quantity" step="1" value="{{ form.quantity.value|default:'' }}" {% if form.quantity.errors %}class="field-error"{% endif %}>
+            <div class="error-message" id="quantity_error">
+                {% for error in form.quantity.errors %}
+                    {{ error }}{% if not forloop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
         </div>
 
-        <div class="field">
+        <div class="field{% if form.unit_cost.errors %} field-error{% endif %}">
             <label>Unit Cost (UGX) *</label>
-            <input type="number" name="unit_cost" id="unit_cost" placeholder="Enter unit cost" step="0.01" value="{{ form.unit_cost.value|default:'' }}">
-            <div class="error-message" id="unit_cost_error"></div>
+            <input type="number" name="unit_cost" id="unit_cost" placeholder="Enter unit cost" step="0.01" value="{{ form.unit_cost.value|default:'' }}" {% if form.unit_cost.errors %}class="field-error"{% endif %}>
+            <div class="error-message" id="unit_cost_error">
+                {% for error in form.unit_cost.errors %}
+                    {{ error }}{% if not forloop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
         </div>
 
         <div class="field">
+            <label>Total Cost (UGX)</label>
+            <input type="number" name="total_cost" id="total_cost" placeholder="Automatically calculated total" step="0.01" readonly>
+        </div>
+
+        <div class="field{% if form.amount_paid.errors %} field-error{% endif %}">
             <label>Amount Paid (UGX)</label>
-            <input type="number" name="amount_paid" id="amount_paid" placeholder="Enter amount paid" step="0.01" value="{{ form.amount_paid.value|default:'0' }}">
-            <div class="error-message" id="amount_paid_error"></div>
+            <input type="number" name="amount_paid" id="amount_paid" placeholder="Enter amount paid" step="0.01" value="{{ form.amount_paid.value|default:'0' }}" {% if form.amount_paid.errors %}class="field-error"{% endif %}>
+            <div class="error-message" id="amount_paid_error">
+                {% for error in form.amount_paid.errors %}
+                    {{ error }}{% if not forloop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
         </div>
 
-        <div class="field">
+        <div class="field{% if form.notes.errors %} field-error{% endif %}">
             <label>Notes</label>
-            <textarea name="notes" id="notes" rows="3" placeholder="Enter any notes">{{ form.notes.value|default:'' }}</textarea>
-            <div class="error-message" id="notes_error"></div>
+            <textarea name="notes" id="notes" rows="3" placeholder="Enter any notes" {% if form.notes.errors %}class="field-error"{% endif %}>{{ form.notes.value|default:'' }}</textarea>
+            <div class="error-message" id="notes_error">
+                {% for error in form.notes.errors %}
+                    {{ error }}{% if not forloop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
         </div>
 
         <button type="submit">Save Credit</button>
@@ -169,6 +206,7 @@
         const productName = document.getElementById('product_name');
         const quantity = document.getElementById('quantity');
         const unitCost = document.getElementById('unit_cost');
+        const totalCostField = document.getElementById('total_cost');
         const amountPaid = document.getElementById('amount_paid');
         const notes = document.getElementById('notes');
         
@@ -227,6 +265,32 @@
                 });
             }
         });
+
+        // Update total cost when quantity or unit cost change
+        function updateTotal() {
+            const qty = quantity && quantity.value ? parseFloat(quantity.value) : 0;
+            const unit = unitCost && unitCost.value ? parseFloat(unitCost.value) : 0;
+            let total = 0;
+            if (!isNaN(qty) && !isNaN(unit) && qty > 0 && unit >= 0) {
+                total = qty * unit;
+            }
+            if (totalCostField) {
+                totalCostField.value = total > 0 ? total.toFixed(2) : '';
+            }
+            return total;
+        }
+
+        if (quantity) {
+            quantity.addEventListener('input', updateTotal);
+            quantity.addEventListener('change', updateTotal);
+        }
+        if (unitCost) {
+            unitCost.addEventListener('input', updateTotal);
+            unitCost.addEventListener('change', updateTotal);
+        }
+
+        // initialize total on load
+        updateTotal();
         
         if (form) {
             form.addEventListener('submit', function(e) {
@@ -287,6 +351,9 @@
                 let totalCost = 0;
                 if (quantityVal && unitCostVal && parseFloat(quantityVal) > 0 && parseFloat(unitCostVal) > 0) {
                     totalCost = parseFloat(quantityVal) * parseFloat(unitCostVal);
+                }
+                if (totalCostField) {
+                    totalCostField.value = totalCost > 0 ? totalCost.toFixed(2) : '';
                 }
                 
                 // Amount Paid validation (optional)

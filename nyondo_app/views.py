@@ -451,6 +451,8 @@ def add_stock(request):
 
             # Redirect to stock list
             return redirect("stock_list")
+        else:
+            messages.error(request, "Please fix the errors below and try again.")
 
     # Send form to template
     return render(
@@ -463,7 +465,7 @@ def add_stock(request):
 @login_required
 def edit_stock(request, stock_id):
 
-    # Get stock item or 404
+    # Get stock item or 404i want
     stock = get_object_or_404(Stock, id=stock_id)
 
     # Load form with existing data
@@ -583,7 +585,7 @@ def add_sale(request):
 
         if action == "update_price":
             messages.info(request, "Selling price loaded from selected product.")
-            return render(request, "nyondo/add_sale.html", {"form": form, "products": products})
+            return render(request, "nyondo/add_sales.html", {"form": form, "products": products})
 
         if form.is_valid():
             sale = form.save()
@@ -603,7 +605,7 @@ def add_sale(request):
         else:
             messages.error(request, "Please fix the errors below and try again.")
 
-    return render(request, "nyondo/add_sale.html", {"form": form, "products": products})
+    return render(request, "nyondo/add_sales.html", {"form": form, "products": products})
 
 
 # EDIT SALE
@@ -810,6 +812,8 @@ def add_credit(request):
             )
 
             return redirect("credit_list")
+        else:
+            messages.error(request, "Please fix the errors below and try again.")
 
     else:
         form = SupplierCreditForm()

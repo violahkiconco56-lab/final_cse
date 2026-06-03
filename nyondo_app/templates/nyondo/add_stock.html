@@ -38,20 +38,40 @@
 
     <h2>Add Stock</h2>
 
+    {% if messages %}
+        {% for message in messages %}
+            <div class="msg" style="padding: 10px; margin-bottom: 15px; border-radius: 4px; background: {% if message.tags == 'error' %}#f8d7da{% else %}#d4edda{% endif %}; color: {% if message.tags == 'error' %}#721c24{% else %}#155724{% endif %};">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <div class="msg" style="padding: 10px; margin-bottom: 15px; border-radius: 4px; background: #f8d7da; color: #721c24;">
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <form method="POST" id="stockForm">
         {% csrf_token %}
 
         <div class="grid">
 
-            <div class="field">
+            <div class="field{% if form.product_name.errors %} field-error{% endif %}">
                 <label>Product Name *</label>
-                <input type="text" name="product_name" id="product_name" placeholder="Enter product name" value="{{ form.product_name.value|default:'' }}">
-                <div class="error-message" id="product_name_error"></div>
+                <input type="text" name="product_name" id="product_name" placeholder="Enter product name" value="{{ form.product_name.value|default:'' }}" {% if form.product_name.errors %}class="field-error"{% endif %}>
+                <div class="error-message" id="product_name_error">
+                    {% for error in form.product_name.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
             </div>
 
-            <div class="field">
+            <div class="field{% if form.category.errors %} field-error{% endif %}">
                 <label>Category *</label>
-                <select name="category" id="category">
+                <select name="category" id="category" {% if form.category.errors %}class="field-error"{% endif %}>
                     <option value="">Select Category</option>
                     <option value="cement" {% if form.category.value == 'cement' %}selected{% endif %}>Cement</option>
                     <option value="iron_sheets" {% if form.category.value == 'iron_sheets' %}selected{% endif %}>Iron Sheets</option>
@@ -64,44 +84,72 @@
                     <option value="tools" {% if form.category.value == 'tools' %}selected{% endif %}>Tools</option>
                     <option value="other" {% if form.category.value == 'other' %}selected{% endif %}>Other</option>
                 </select>
-                <div class="error-message" id="category_error"></div>
+                <div class="error-message" id="category_error">
+                    {% for error in form.category.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
             </div>
 
-            <div class="field">
+            <div class="field{% if form.quantity.errors %} field-error{% endif %}">
                 <label>Quantity *</label>
-                <input type="number" name="quantity" id="quantity" placeholder="Enter quantity" step="1" value="{{ form.quantity.value|default:'' }}">
-                <div class="error-message" id="quantity_error"></div>
+                <input type="number" name="quantity" id="quantity" placeholder="Enter quantity" step="1" value="{{ form.quantity.value|default:'' }}" {% if form.quantity.errors %}class="field-error"{% endif %}>
+                <div class="error-message" id="quantity_error">
+                    {% for error in form.quantity.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
             </div>
 
-            <div class="field">
+            <div class="field{% if form.buying_price.errors %} field-error{% endif %}">
                 <label>Buying Price (UGX) *</label>
-                <input type="number" name="buying_price" id="buying_price" placeholder="Enter buying price" step="0.01" value="{{ form.buying_price.value|default:'' }}">
-                <div class="error-message" id="buying_price_error"></div>
+                <input type="number" name="buying_price" id="buying_price" placeholder="Enter buying price" step="0.01" value="{{ form.buying_price.value|default:'' }}" {% if form.buying_price.errors %}class="field-error"{% endif %}>
+                <div class="error-message" id="buying_price_error">
+                    {% for error in form.buying_price.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
             </div>
 
-            <div class="field">
+            <div class="field{% if form.selling_price.errors %} field-error{% endif %}">
                 <label>Selling Price (UGX) *</label>
-                <input type="number" name="selling_price" id="selling_price" placeholder="Enter selling price" step="0.01" value="{{ form.selling_price.value|default:'' }}">
-                <div class="error-message" id="selling_price_error"></div>
+                <input type="number" name="selling_price" id="selling_price" placeholder="Enter selling price" step="0.01" value="{{ form.selling_price.value|default:'' }}" {% if form.selling_price.errors %}class="field-error"{% endif %}>
+                <div class="error-message" id="selling_price_error">
+                    {% for error in form.selling_price.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
             </div>
 
-            <div class="field">
+            <div class="field{% if form.supplier_name.errors %} field-error{% endif %}">
                 <label>Supplier</label>
-                <input type="text" name="supplier_name" id="supplier_name" placeholder="Enter supplier name" value="{{ form.supplier_name.value|default:'' }}">
-                <div class="error-message" id="supplier_name_error"></div>
+                <input type="text" name="supplier_name" id="supplier_name" placeholder="Enter supplier name" value="{{ form.supplier_name.value|default:'' }}" {% if form.supplier_name.errors %}class="field-error"{% endif %}>
+                <div class="error-message" id="supplier_name_error">
+                    {% for error in form.supplier_name.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
             </div>
 
-            <div class="field full">
+            <div class="field full{% if form.description.errors %} field-error{% endif %}">
                 <label>Description (Max 20 characters)</label>
-                <textarea name="description" id="description" rows="3" placeholder="Enter product description (max 20 characters)" maxlength="20">{{ form.description.value|default:'' }}</textarea>
-                <div class="error-message" id="description_error"></div>
+                <textarea name="description" id="description" rows="3" placeholder="Enter product description (max 20 characters)" maxlength="20" {% if form.description.errors %}class="field-error"{% endif %}>{{ form.description.value|default:'' }}</textarea>
+                <div class="error-message" id="description_error">
+                    {% for error in form.description.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
                 <small style="color: #666; font-size: 0.7rem;" id="description_char_count">0 / 20 characters</small>
             </div>
 
-            <div class="field">
+            <div class="field{% if form.reorder_level.errors %} field-error{% endif %}">
                 <label>Reorder Level</label>
-                <input type="number" name="reorder_level" id="reorder_level" placeholder="Enter reorder level" step="1" value="{{ form.reorder_level.value|default:'' }}">
-                <div class="error-message" id="reorder_level_error"></div>
+                <input type="number" name="reorder_level" id="reorder_level" placeholder="Enter reorder level" step="1" value="{{ form.reorder_level.value|default:'' }}" {% if form.reorder_level.errors %}class="field-error"{% endif %}>
+                <div class="error-message" id="reorder_level_error">
+                    {% for error in form.reorder_level.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
             </div>
 
         </div>

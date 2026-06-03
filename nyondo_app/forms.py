@@ -265,14 +265,24 @@ class SaleForm(forms.ModelForm):
             "payment_status",
         ]
 
+        error_messages = {
+            "customer_name": {"required": "Customer name is required."},
+            "customer_phone": {"required": "Phone number is required."},
+            "product": {"required": "Please select a product."},
+            "quantity": {"required": "Quantity is required."},
+            "unit_price": {"required": "Unit price is required."},
+            "distance_km": {"required": "Distance is required."},
+            "payment_status": {"required": "Payment status is required."},
+        }
+
         widgets = {
             "customer_name": forms.TextInput(attrs={"placeholder": "Customer name"}),
             "customer_phone": forms.TextInput(attrs={"placeholder": "Phone number"}),
-            "product": forms.Select(),
-            "quantity": forms.NumberInput(attrs={"min": 1}),
-            "unit_price": forms.NumberInput(attrs={"step": "0.01", "min": 0, "readonly": "readonly"}),
-            "distance_km": forms.NumberInput(attrs={"min": 0}),
-            "payment_status": forms.Select(),
+            "product": forms.Select(attrs={"required": "required"}),
+            "quantity": forms.NumberInput(attrs={"min": 1, "required": "required"}),
+            "unit_price": forms.NumberInput(attrs={"step": "0.01", "min": 0, "readonly": "readonly", "required": "required"}),
+            "distance_km": forms.NumberInput(attrs={"min": 0, "placeholder": "Distance in KM", "required": "required"}),
+            "payment_status": forms.Select(attrs={"required": "required"}),
         }
 
     def clean_customer_name(self):
@@ -287,6 +297,16 @@ class SaleForm(forms.ModelForm):
             raise forms.ValidationError("Phone number must be at least 10 digits")
 
         return phone
+
+    def clean_distance_km(self):
+        distance = self.cleaned_data.get("distance_km")
+
+        if distance is None:
+            raise forms.ValidationError("Distance is required.")
+        if distance < 0:
+            raise forms.ValidationError("Distance cannot be negative.")
+
+        return distance
 
     def clean(self):
         cleaned_data = super().clean()
