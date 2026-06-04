@@ -45,6 +45,22 @@ body {
             background: #473a73;
         }
 
+        .btn-secondary {
+            background: #8a79b2;
+        }
+
+        .btn-secondary:hover {
+            background: #6f6599;
+        }
+
+        .btn-back {
+            background: #8a79b2;
+        }
+
+        .btn-back:hover {
+            background: #6f6599;
+        }
+
         .btn-edit {
             background: #7d6ea5;
         }

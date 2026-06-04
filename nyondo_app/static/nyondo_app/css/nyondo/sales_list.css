@@ -55,6 +55,30 @@
     background:#6b5aa6;
 }
 
+.btn-secondary {
+    background: #8a79b2;
+    color: white;
+    padding: 9px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background: #6f6599;
+}
+
+.btn-back {
+    background: #8a79b2;
+    color: white;
+    padding: 9px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.btn-back:hover {
+    background: #6f6599;
+}
+
 /* Table */
 .table-container{
     background:white;

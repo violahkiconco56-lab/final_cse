@@ -12,17 +12,19 @@ from django.contrib.auth.models import User
 class Stock(models.Model):
 
     CATEGORY_CHOICES = [
-        ("Cement", "Cement"),
-        ("Iron Bars", "Iron Bars"),
-        ("Nails", "Nails"),
-        ("Iron Sheets", "Iron Sheets"),
-        ("Wire Mesh", "Wire Mesh"),
-        ("Barbed Wire", "Barbed Wire"),
-        ("Wheelbarrows", "Wheelbarrows"),
-        ("Other", "Other"),
+        ("cement", "Cement"),
+        ("iron_bars", "Iron Bars"),
+        ("nails", "Nails"),
+        ("iron_sheets", "Iron Sheets"),
+        ("wire_mesh", "Wire Mesh"),
+        ("barbed_wire", "Barbed Wire"),
+        ("wheelbarrows", "Wheelbarrows"),
+        ("paint", "Paint"),
+        ("tools", "Tools"),
+        ("other", "Other"),
     ]
 
-    product_name = models.CharField(max_length=100)
+    product_name = models.TextField(max_length=100)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
 
     quantity = models.PositiveIntegerField()
@@ -415,7 +417,7 @@ class DepositScheme(models.Model):
         ("Iron Bars", "Iron Bars"),
     ]
 
-    product_name = models.CharField(max_length=50, choices=PRODUCT_CHOICES)
+    product_name = models.TextField(max_length=50)
 
     unit_price = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     quantity = models.PositiveIntegerField(default=1)

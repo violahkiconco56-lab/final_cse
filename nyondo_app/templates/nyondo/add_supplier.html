@@ -13,13 +13,77 @@
 
     {% if messages %}
         {% for message in messages %}
-            <div class="msg">{{ message }}</div>
+            <div class="msg {{ message.tags }}">{{ message }}</div>
         {% endfor %}
     {% endif %}
 
-    <form method="POST">
+    {% if form.non_field_errors %}
+        <div class="msg msg-error">
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="POST" novalidate>
         {% csrf_token %}
-        {{ form.as_p }}
+
+        <div class="field{% if form.name.errors %} field-error{% endif %}">
+            <label for="{{ form.name.id_for_label }}">Supplier Name</label>
+            <input
+                type="text"
+                name="name"
+                id="{{ form.name.id_for_label }}"
+                placeholder="Supplier name"
+                value="{{ form.name.value|default:'' }}"
+                {% if form.name.errors %}class="field-error"{% endif %}
+            >
+            {% if form.name.errors %}
+                <div class="error-message show">
+                    {% for error in form.name.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="field{% if form.contact.errors %} field-error{% endif %}">
+            <label for="{{ form.contact.id_for_label }}">Contact</label>
+            <input
+                type="text"
+                name="contact"
+                id="{{ form.contact.id_for_label }}"
+                placeholder="Phone or contact"
+                value="{{ form.contact.value|default:'' }}"
+                {% if form.contact.errors %}class="field-error"{% endif %}
+            >
+            {% if form.contact.errors %}
+                <div class="error-message show">
+                    {% for error in form.contact.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="field{% if form.address.errors %} field-error{% endif %}">
+            <label for="{{ form.address.id_for_label }}">Address</label>
+            <textarea
+                name="address"
+                id="{{ form.address.id_for_label }}"
+                rows="3"
+                placeholder="Supplier address"
+                {% if form.address.errors %}class="field-error"{% endif %}
+            >{{ form.address.value|default:'' }}</textarea>
+            {% if form.address.errors %}
+                <div class="error-message show">
+                    {% for error in form.address.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
         <button type="submit">Save Supplier</button>
     </form>
 

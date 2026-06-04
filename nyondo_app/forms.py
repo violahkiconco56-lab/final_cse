@@ -21,7 +21,11 @@ class StockForm(forms.ModelForm):
         ]
 
         widgets = {
-            "product_name": forms.TextInput(attrs={"placeholder": "Enter product name"}),
+            "product_name": forms.TextInput(attrs={
+                "placeholder": "Enter product name",
+                "autocomplete": "off",
+                "type": "text"
+            }),
             "category": forms.Select(),
             "quantity": forms.NumberInput(attrs={"min": 0}),
             "buying_price": forms.NumberInput(attrs={"step": "0.01"}),
@@ -200,7 +204,10 @@ class DepositSchemeForm(forms.ModelForm):
             "customer_name": forms.TextInput(attrs={"placeholder": "Full name"}),
             "nin_number": forms.TextInput(attrs={"placeholder": "National ID"}),
             "phone_number": forms.TextInput(attrs={"placeholder": "Phone number"}),
-            "product_name": forms.Select(),
+            "product_name": forms.TextInput(attrs={
+                "placeholder": "Enter product name",
+                "autocomplete": "off",
+            }),
             "unit_price": forms.NumberInput(attrs={"step": "0.01", "min": 0}),
             "quantity": forms.NumberInput(attrs={"min": 1}),
             "amount_deposited": forms.NumberInput(attrs={"step": "0.01", "min": 0}),
@@ -221,6 +228,9 @@ class DepositSchemeForm(forms.ModelForm):
             raise forms.ValidationError("NIN already exists.")
 
         return nin
+
+    def clean_product_name(self):
+        return (self.cleaned_data.get("product_name") or "").strip()
 
     def clean(self):
         cleaned_data = super().clean()

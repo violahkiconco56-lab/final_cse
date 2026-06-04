@@ -108,7 +108,7 @@
         </div>
     {% endif %}
 
-    <form method="POST" id="creditForm">
+    <form method="POST" id="creditForm" novalidate>
         {% csrf_token %}
 
         <div class="field{% if form.supplier.errors %} field-error{% endif %}">
@@ -121,7 +121,7 @@
                 </option>
                 {% endfor %}
             </select>
-            <div class="error-message" id="supplier_error">
+            <div class="error-message{% if form.supplier.errors %} show{% endif %}" id="supplier_error">
                 {% for error in form.supplier.errors %}
                     {{ error }}{% if not forloop.last %}<br>{% endif %}
                 {% endfor %}
@@ -131,7 +131,7 @@
         <div class="field{% if form.product_name.errors %} field-error{% endif %}">
             <label>Product Name *</label>
             <input type="text" name="product_name" id="product_name" placeholder="Enter product name" value="{{ form.product_name.value|default:'' }}" {% if form.product_name.errors %}class="field-error"{% endif %}>
-            <div class="error-message" id="product_name_error">
+            <div class="error-message{% if form.product_name.errors %} show{% endif %}" id="product_name_error">
                 {% for error in form.product_name.errors %}
                     {{ error }}{% if not forloop.last %}<br>{% endif %}
                 {% endfor %}
@@ -141,7 +141,7 @@
         <div class="field{% if form.quantity.errors %} field-error{% endif %}">
             <label>Quantity *</label>
             <input type="number" name="quantity" id="quantity" placeholder="Enter quantity" step="1" value="{{ form.quantity.value|default:'' }}" {% if form.quantity.errors %}class="field-error"{% endif %}>
-            <div class="error-message" id="quantity_error">
+            <div class="error-message{% if form.quantity.errors %} show{% endif %}" id="quantity_error">
                 {% for error in form.quantity.errors %}
                     {{ error }}{% if not forloop.last %}<br>{% endif %}
                 {% endfor %}
@@ -151,7 +151,7 @@
         <div class="field{% if form.unit_cost.errors %} field-error{% endif %}">
             <label>Unit Cost (UGX) *</label>
             <input type="number" name="unit_cost" id="unit_cost" placeholder="Enter unit cost" step="0.01" value="{{ form.unit_cost.value|default:'' }}" {% if form.unit_cost.errors %}class="field-error"{% endif %}>
-            <div class="error-message" id="unit_cost_error">
+            <div class="error-message{% if form.unit_cost.errors %} show{% endif %}" id="unit_cost_error">
                 {% for error in form.unit_cost.errors %}
                     {{ error }}{% if not forloop.last %}<br>{% endif %}
                 {% endfor %}
@@ -166,7 +166,7 @@
         <div class="field{% if form.amount_paid.errors %} field-error{% endif %}">
             <label>Amount Paid (UGX)</label>
             <input type="number" name="amount_paid" id="amount_paid" placeholder="Enter amount paid" step="0.01" value="{{ form.amount_paid.value|default:'0' }}" {% if form.amount_paid.errors %}class="field-error"{% endif %}>
-            <div class="error-message" id="amount_paid_error">
+            <div class="error-message{% if form.amount_paid.errors %} show{% endif %}" id="amount_paid_error">
                 {% for error in form.amount_paid.errors %}
                     {{ error }}{% if not forloop.last %}<br>{% endif %}
                 {% endfor %}
@@ -176,7 +176,7 @@
         <div class="field{% if form.notes.errors %} field-error{% endif %}">
             <label>Notes</label>
             <textarea name="notes" id="notes" rows="3" placeholder="Enter any notes" {% if form.notes.errors %}class="field-error"{% endif %}>{{ form.notes.value|default:'' }}</textarea>
-            <div class="error-message" id="notes_error">
+            <div class="error-message{% if form.notes.errors %} show{% endif %}" id="notes_error">
                 {% for error in form.notes.errors %}
                     {{ error }}{% if not forloop.last %}<br>{% endif %}
                 {% endfor %}
@@ -293,91 +293,7 @@
         updateTotal();
         
         if (form) {
-            form.addEventListener('submit', function(e) {
-                clearFieldErrors();
-                let isValid = true;
-                
-                // Get values
-                const supplierVal = supplier ? supplier.value : '';
-                const productNameVal = productName ? productName.value.trim() : '';
-                const quantityVal = quantity ? quantity.value : '';
-                const unitCostVal = unitCost ? unitCost.value : '';
-                const amountPaidVal = amountPaid ? amountPaid.value : 0;
-                const notesVal = notes ? notes.value.trim() : '';
-                
-                // Supplier validation (required)
-                if (!supplierVal) {
-                    showFieldError(supplier, supplierError, 'Please select a supplier');
-                    isValid = false;
-                }
-                
-                // Product Name validation (required)
-                if (!productNameVal) {
-                    showFieldError(productName, productNameError, 'Product name is required');
-                    isValid = false;
-                } else if (productNameVal.length < 2) {
-                    showFieldError(productName, productNameError, 'Product name must be at least 2 characters');
-                    isValid = false;
-                } else if (productNameVal.length > 200) {
-                    showFieldError(productName, productNameError, 'Product name must not exceed 200 characters');
-                    isValid = false;
-                }
-                
-                // Quantity validation (required)
-                if (!quantityVal && quantityVal !== 0) {
-                    showFieldError(quantity, quantityError, 'Quantity is required');
-                    isValid = false;
-                } else if (parseFloat(quantityVal) <= 0) {
-                    showFieldError(quantity, quantityError, 'Quantity must be greater than 0');
-                    isValid = false;
-                } else if (!/^\d+$/.test(quantityVal)) {
-                    showFieldError(quantity, quantityError, 'Please enter a valid whole number');
-                    isValid = false;
-                }
-                
-                // Unit Cost validation (required)
-                if (!unitCostVal && unitCostVal !== 0) {
-                    showFieldError(unitCost, unitCostError, 'Unit cost is required');
-                    isValid = false;
-                } else if (parseFloat(unitCostVal) <= 0) {
-                    showFieldError(unitCost, unitCostError, 'Unit cost must be greater than 0');
-                    isValid = false;
-                } else if (parseFloat(unitCostVal) < 0) {
-                    showFieldError(unitCost, unitCostError, 'Unit cost cannot be negative');
-                    isValid = false;
-                }
-                
-                // Calculate total cost
-                let totalCost = 0;
-                if (quantityVal && unitCostVal && parseFloat(quantityVal) > 0 && parseFloat(unitCostVal) > 0) {
-                    totalCost = parseFloat(quantityVal) * parseFloat(unitCostVal);
-                }
-                if (totalCostField) {
-                    totalCostField.value = totalCost > 0 ? totalCost.toFixed(2) : '';
-                }
-                
-                // Amount Paid validation (optional)
-                if (amountPaidVal && amountPaidVal !== '') {
-                    const amountPaidNum = parseFloat(amountPaidVal);
-                    if (amountPaidNum < 0) {
-                        showFieldError(amountPaid, amountPaidError, 'Amount paid cannot be negative');
-                        isValid = false;
-                    } else if (totalCost > 0 && amountPaidNum > totalCost) {
-                        showFieldError(amountPaid, amountPaidError, 'Amount paid cannot exceed total cost (UGX ' + totalCost.toLocaleString() + ')');
-                        isValid = false;
-                    }
-                }
-                
-                // Notes validation (optional)
-                if (notesVal && notesVal.length > 500) {
-                    showFieldError(notes, notesError, 'Notes must not exceed 500 characters');
-                    isValid = false;
-                }
-                
-                if (!isValid) {
-                    e.preventDefault();
-                }
-            });
+            form.addEventListener('submit', updateTotal);
         }
     })();
 </script>

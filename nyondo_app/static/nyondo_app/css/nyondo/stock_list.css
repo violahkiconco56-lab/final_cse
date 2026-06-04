@@ -36,6 +36,24 @@
         background: #4b0082;
     }
 
+    .btn-secondary {
+        background: #8a79b2;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #6f6599;
+    }
+
+    .btn-back {
+        background: #8a79b2;
+        color: white;
+    }
+
+    .btn-back:hover {
+        background: #6f6599;
+    }
+
     .btn-danger {
         background: #d00000;
         color: white;

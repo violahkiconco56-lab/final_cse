@@ -781,6 +781,8 @@ def add_supplier(request):
             )
             messages.success(request, "Supplier registered successfully.")
             return redirect("supplier_list")
+        else:
+            messages.error(request, "Please fix the errors below and try again.")
     else:
         form = SupplierForm()
 
@@ -958,6 +960,8 @@ def add_deposit(request):
         )
 
         return redirect("deposit_receipt_print", deposit_id=deposit.id)
+    elif request.method == "POST":
+        messages.error(request, "Please fix the errors below and try again.")
 
     return render(
         request,

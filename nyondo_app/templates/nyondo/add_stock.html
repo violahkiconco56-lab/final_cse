@@ -54,7 +54,7 @@
         </div>
     {% endif %}
 
-    <form method="POST" id="stockForm">
+    <form method="POST" id="stockForm" novalidate>
         {% csrf_token %}
 
         <div class="grid">
@@ -62,7 +62,7 @@
             <div class="field{% if form.product_name.errors %} field-error{% endif %}">
                 <label>Product Name *</label>
                 <input type="text" name="product_name" id="product_name" placeholder="Enter product name" value="{{ form.product_name.value|default:'' }}" {% if form.product_name.errors %}class="field-error"{% endif %}>
-                <div class="error-message" id="product_name_error">
+                <div class="error-message{% if form.product_name.errors %} show{% endif %}" id="product_name_error">
                     {% for error in form.product_name.errors %}
                         {{ error }}{% if not forloop.last %}<br>{% endif %}
                     {% endfor %}
@@ -84,7 +84,7 @@
                     <option value="tools" {% if form.category.value == 'tools' %}selected{% endif %}>Tools</option>
                     <option value="other" {% if form.category.value == 'other' %}selected{% endif %}>Other</option>
                 </select>
-                <div class="error-message" id="category_error">
+                <div class="error-message{% if form.category.errors %} show{% endif %}" id="category_error">
                     {% for error in form.category.errors %}
                         {{ error }}{% if not forloop.last %}<br>{% endif %}
                     {% endfor %}
@@ -94,7 +94,7 @@
             <div class="field{% if form.quantity.errors %} field-error{% endif %}">
                 <label>Quantity *</label>
                 <input type="number" name="quantity" id="quantity" placeholder="Enter quantity" step="1" value="{{ form.quantity.value|default:'' }}" {% if form.quantity.errors %}class="field-error"{% endif %}>
-                <div class="error-message" id="quantity_error">
+                <div class="error-message{% if form.quantity.errors %} show{% endif %}" id="quantity_error">
                     {% for error in form.quantity.errors %}
                         {{ error }}{% if not forloop.last %}<br>{% endif %}
                     {% endfor %}
@@ -104,7 +104,7 @@
             <div class="field{% if form.buying_price.errors %} field-error{% endif %}">
                 <label>Buying Price (UGX) *</label>
                 <input type="number" name="buying_price" id="buying_price" placeholder="Enter buying price" step="0.01" value="{{ form.buying_price.value|default:'' }}" {% if form.buying_price.errors %}class="field-error"{% endif %}>
-                <div class="error-message" id="buying_price_error">
+                <div class="error-message{% if form.buying_price.errors %} show{% endif %}" id="buying_price_error">
                     {% for error in form.buying_price.errors %}
                         {{ error }}{% if not forloop.last %}<br>{% endif %}
                     {% endfor %}
@@ -114,7 +114,7 @@
             <div class="field{% if form.selling_price.errors %} field-error{% endif %}">
                 <label>Selling Price (UGX) *</label>
                 <input type="number" name="selling_price" id="selling_price" placeholder="Enter selling price" step="0.01" value="{{ form.selling_price.value|default:'' }}" {% if form.selling_price.errors %}class="field-error"{% endif %}>
-                <div class="error-message" id="selling_price_error">
+                <div class="error-message{% if form.selling_price.errors %} show{% endif %}" id="selling_price_error">
                     {% for error in form.selling_price.errors %}
                         {{ error }}{% if not forloop.last %}<br>{% endif %}
                     {% endfor %}
@@ -124,7 +124,7 @@
             <div class="field{% if form.supplier_name.errors %} field-error{% endif %}">
                 <label>Supplier</label>
                 <input type="text" name="supplier_name" id="supplier_name" placeholder="Enter supplier name" value="{{ form.supplier_name.value|default:'' }}" {% if form.supplier_name.errors %}class="field-error"{% endif %}>
-                <div class="error-message" id="supplier_name_error">
+                <div class="error-message{% if form.supplier_name.errors %} show{% endif %}" id="supplier_name_error">
                     {% for error in form.supplier_name.errors %}
                         {{ error }}{% if not forloop.last %}<br>{% endif %}
                     {% endfor %}
@@ -134,7 +134,7 @@
             <div class="field full{% if form.description.errors %} field-error{% endif %}">
                 <label>Description (Max 20 characters)</label>
                 <textarea name="description" id="description" rows="3" placeholder="Enter product description (max 20 characters)" maxlength="20" {% if form.description.errors %}class="field-error"{% endif %}>{{ form.description.value|default:'' }}</textarea>
-                <div class="error-message" id="description_error">
+                <div class="error-message{% if form.description.errors %} show{% endif %}" id="description_error">
                     {% for error in form.description.errors %}
                         {{ error }}{% if not forloop.last %}<br>{% endif %}
                     {% endfor %}
@@ -145,7 +145,7 @@
             <div class="field{% if form.reorder_level.errors %} field-error{% endif %}">
                 <label>Reorder Level</label>
                 <input type="number" name="reorder_level" id="reorder_level" placeholder="Enter reorder level" step="1" value="{{ form.reorder_level.value|default:'' }}" {% if form.reorder_level.errors %}class="field-error"{% endif %}>
-                <div class="error-message" id="reorder_level_error">
+                <div class="error-message{% if form.reorder_level.errors %} show{% endif %}" id="reorder_level_error">
                     {% for error in form.reorder_level.errors %}
                         {{ error }}{% if not forloop.last %}<br>{% endif %}
                     {% endfor %}
@@ -169,205 +169,5 @@
 </div>
 
 <link rel="stylesheet" href="{% static 'nyondo_app/css/nyondo/add_stock.css' %}">
-
-<script>
-    (function() {
-        const form = document.getElementById('stockForm');
-        
-        // Get all form fields
-        const productName = document.getElementById('product_name');
-        const category = document.getElementById('category');
-        const quantity = document.getElementById('quantity');
-        const buyingPrice = document.getElementById('buying_price');
-        const sellingPrice = document.getElementById('selling_price');
-        const supplierName = document.getElementById('supplier_name');
-        const description = document.getElementById('description');
-        const reorderLevel = document.getElementById('reorder_level');
-        
-        // Error message elements
-        const productNameError = document.getElementById('product_name_error');
-        const categoryError = document.getElementById('category_error');
-        const quantityError = document.getElementById('quantity_error');
-        const buyingPriceError = document.getElementById('buying_price_error');
-        const sellingPriceError = document.getElementById('selling_price_error');
-        const supplierNameError = document.getElementById('supplier_name_error');
-        const descriptionError = document.getElementById('description_error');
-        const reorderLevelError = document.getElementById('reorder_level_error');
-        
-        // Character counter for description
-        const descriptionCharCount = document.getElementById('description_char_count');
-        
-        function clearFieldErrors() {
-            const fields = [productName, category, quantity, buyingPrice, sellingPrice, supplierName, description, reorderLevel];
-            fields.forEach(field => {
-                if (field) field.classList.remove('field-error');
-            });
-            
-            const errorElements = [productNameError, categoryError, quantityError, buyingPriceError, sellingPriceError, supplierNameError, descriptionError, reorderLevelError];
-            errorElements.forEach(error => {
-                if (error) {
-                    error.classList.remove('show');
-                    error.textContent = '';
-                }
-            });
-        }
-        
-        function showFieldError(field, errorElement, message) {
-            if (field) field.classList.add('field-error');
-            if (errorElement) {
-                errorElement.textContent = message;
-                errorElement.classList.add('show');
-            }
-        }
-        
-        // Update character count for description
-        if (description) {
-            function updateCharCount() {
-                const currentLength = description.value.length;
-                descriptionCharCount.textContent = currentLength + ' / 20 characters';
-                if (currentLength >= 20) {
-                    descriptionCharCount.style.color = '#e74c3c';
-                } else {
-                    descriptionCharCount.style.color = '#666';
-                }
-            }
-            
-            description.addEventListener('input', updateCharCount);
-            updateCharCount(); // Initialize counter
-        }
-        
-        // Clear errors when user types
-        const inputFields = [productName, category, quantity, buyingPrice, sellingPrice, supplierName, description, reorderLevel];
-        inputFields.forEach(field => {
-            if (field) {
-                field.addEventListener('input', function() {
-                    field.classList.remove('field-error');
-                    const errorId = field.id + '_error';
-                    const errorElement = document.getElementById(errorId);
-                    if (errorElement) {
-                        errorElement.classList.remove('show');
-                        errorElement.textContent = '';
-                    }
-                });
-                field.addEventListener('change', function() {
-                    field.classList.remove('field-error');
-                    const errorId = field.id + '_error';
-                    const errorElement = document.getElementById(errorId);
-                    if (errorElement) {
-                        errorElement.classList.remove('show');
-                        errorElement.textContent = '';
-                    }
-                });
-            }
-        });
-        
-        form.addEventListener('submit', function(e) {
-            clearFieldErrors();
-            let isValid = true;
-            
-            // Get values
-            const productNameVal = productName ? productName.value.trim() : '';
-            const categoryVal = category ? category.value : '';
-            const quantityVal = quantity ? quantity.value : '';
-            const buyingPriceVal = buyingPrice ? buyingPrice.value : '';
-            const sellingPriceVal = sellingPrice ? sellingPrice.value : '';
-            const supplierNameVal = supplierName ? supplierName.value.trim() : '';
-            const descriptionVal = description ? description.value.trim() : '';
-            const reorderLevelVal = reorderLevel ? reorderLevel.value : '';
-            
-            // Product Name validation
-            if (!productNameVal) {
-                showFieldError(productName, productNameError, 'Product name is required');
-                isValid = false;
-            } else if (productNameVal.length < 2) {
-                showFieldError(productName, productNameError, 'Product name must be at least 2 characters');
-                isValid = false;
-            } else if (productNameVal.length > 200) {
-                showFieldError(productName, productNameError, 'Product name must not exceed 200 characters');
-                isValid = false;
-            }
-            
-            // Category validation
-            if (!categoryVal) {
-                showFieldError(category, categoryError, 'Please select a category');
-                isValid = false;
-            }
-            
-            // Quantity validation - MUST BE ABOVE 0
-            if (!quantityVal && quantityVal !== 0) {
-                showFieldError(quantity, quantityError, 'Quantity is required');
-                isValid = false;
-            } else if (parseFloat(quantityVal) <= 0) {
-                showFieldError(quantity, quantityError, 'Quantity must be greater than 0');
-                isValid = false;
-            } else if (!/^\d+$/.test(quantityVal)) {
-                showFieldError(quantity, quantityError, 'Please enter a valid whole number');
-                isValid = false;
-            }
-            
-            // Buying Price validation
-            if (!buyingPriceVal && buyingPriceVal !== 0) {
-                showFieldError(buyingPrice, buyingPriceError, 'Buying price is required');
-                isValid = false;
-            } else if (parseFloat(buyingPriceVal) < 0) {
-                showFieldError(buyingPrice, buyingPriceError, 'Buying price cannot be negative');
-                isValid = false;
-            } else if (parseFloat(buyingPriceVal) === 0) {
-                showFieldError(buyingPrice, buyingPriceError, 'Buying price must be greater than 0');
-                isValid = false;
-            }
-            
-            // Selling Price validation
-            if (!sellingPriceVal && sellingPriceVal !== 0) {
-                showFieldError(sellingPrice, sellingPriceError, 'Selling price is required');
-                isValid = false;
-            } else if (parseFloat(sellingPriceVal) < 0) {
-                showFieldError(sellingPrice, sellingPriceError, 'Selling price cannot be negative');
-                isValid = false;
-            } else if (parseFloat(sellingPriceVal) === 0) {
-                showFieldError(sellingPrice, sellingPriceError, 'Selling price must be greater than 0');
-                isValid = false;
-            }
-            
-            // Selling Price vs Buying Price validation
-            if (buyingPriceVal && sellingPriceVal && parseFloat(buyingPriceVal) > 0 && parseFloat(sellingPriceVal) > 0) {
-                if (parseFloat(sellingPriceVal) <= parseFloat(buyingPriceVal)) {
-                    showFieldError(sellingPrice, sellingPriceError, 'Selling price must be greater than buying price');
-                    isValid = false;
-                }
-            }
-            
-            // Supplier Name validation (optional but validate if provided)
-            if (supplierNameVal && supplierNameVal.length < 2) {
-                showFieldError(supplierName, supplierNameError, 'Supplier name must be at least 2 characters');
-                isValid = false;
-            } else if (supplierNameVal && supplierNameVal.length > 100) {
-                showFieldError(supplierName, supplierNameError, 'Supplier name must not exceed 100 characters');
-                isValid = false;
-            }
-            
-            // Description validation - MAX 20 CHARACTERS
-            if (descriptionVal && descriptionVal.length > 20) {
-                showFieldError(description, descriptionError, 'Description must not exceed 20 characters');
-                isValid = false;
-            }
-            
-            // Reorder Level validation (optional)
-            if (reorderLevelVal && reorderLevelVal !== '') {
-                if (parseFloat(reorderLevelVal) < 0) {
-                    showFieldError(reorderLevel, reorderLevelError, 'Reorder level cannot be negative');
-                    isValid = false;
-                } else if (!/^\d+$/.test(reorderLevelVal)) {
-                    showFieldError(reorderLevel, reorderLevelError, 'Please enter a valid whole number');
-                    isValid = false;
-                }
-            }
-            
-            if (!isValid) {
-                e.preventDefault();
-            }
-        });
-    })();
-</script>
 
 {% endblock %}

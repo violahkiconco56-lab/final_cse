@@ -19,53 +19,158 @@
 
     <h2>Add Deposit</h2>
 
-    <form method="POST">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="msg {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <div class="msg msg-error">
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="POST" novalidate>
 
         {% csrf_token %}
 
-        <div>
-            <label>Customer Name</label>
-            {{ form.customer_name }}
-            {{ form.customer_name.errors }}
+        <div class="field{% if form.customer_name.errors %} field-error{% endif %}">
+            <label for="{{ form.customer_name.id_for_label }}">Customer Name</label>
+            <input
+                type="text"
+                name="customer_name"
+                id="{{ form.customer_name.id_for_label }}"
+                placeholder="Full name"
+                value="{{ form.customer_name.value|default:'' }}"
+                {% if form.customer_name.errors %}class="field-error"{% endif %}
+            >
+            {% if form.customer_name.errors %}
+                <div class="error-message show">
+                    {% for error in form.customer_name.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
 
-        <div>
-            <label>NIN Number</label>
-            {{ form.nin_number }}
-            {{ form.nin_number.errors }}
+        <div class="field{% if form.nin_number.errors %} field-error{% endif %}">
+            <label for="{{ form.nin_number.id_for_label }}">NIN Number</label>
+            <input
+                type="text"
+                name="nin_number"
+                id="{{ form.nin_number.id_for_label }}"
+                placeholder="National ID"
+                value="{{ form.nin_number.value|default:'' }}"
+                {% if form.nin_number.errors %}class="field-error"{% endif %}
+            >
+            {% if form.nin_number.errors %}
+                <div class="error-message show">
+                    {% for error in form.nin_number.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
 
-        <div>
-            <label>Phone Number</label>
-            {{ form.phone_number }}
-            {{ form.phone_number.errors }}
+        <div class="field{% if form.phone_number.errors %} field-error{% endif %}">
+            <label for="{{ form.phone_number.id_for_label }}">Phone Number</label>
+            <input
+                type="text"
+                name="phone_number"
+                id="{{ form.phone_number.id_for_label }}"
+                placeholder="Phone number"
+                value="{{ form.phone_number.value|default:'' }}"
+                {% if form.phone_number.errors %}class="field-error"{% endif %}
+            >
+            {% if form.phone_number.errors %}
+                <div class="error-message show">
+                    {% for error in form.phone_number.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
 
-        <div>
-            <label>Product</label>
-            {{ form.product_name }}
-            {{ form.product_name.errors }}
+        <div class="field{% if form.product_name.errors %} field-error{% endif %}">
+            <label for="{{ form.product_name.id_for_label }}">Product</label>
+            <input
+                type="text"
+                name="product_name"
+                id="{{ form.product_name.id_for_label }}"
+                placeholder="Enter product name"
+                value="{{ form.product_name.value|default:'' }}"
+                {% if form.product_name.errors %}class="field-error"{% endif %}
+            >
+            {% if form.product_name.errors %}
+                <div class="error-message show">
+                    {% for error in form.product_name.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
 
-        <div>
-            <label>Unit Price</label>
-            {{ form.unit_price }}
-            {{ form.unit_price.errors }}
+        <div class="field{% if form.unit_price.errors %} field-error{% endif %}">
+            <label for="{{ form.unit_price.id_for_label }}">Unit Price</label>
+            <input
+                type="number"
+                name="unit_price"
+                id="{{ form.unit_price.id_for_label }}"
+                step="0.01"
+                min="0"
+                value="{{ form.unit_price.value|default:'' }}"
+                {% if form.unit_price.errors %}class="field-error"{% endif %}
+            >
+            {% if form.unit_price.errors %}
+                <div class="error-message show">
+                    {% for error in form.unit_price.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
 
-        <div>
-            <label>Quantity</label>
-            {{ form.quantity }}
-            {{ form.quantity.errors }}
+        <div class="field{% if form.quantity.errors %} field-error{% endif %}">
+            <label for="{{ form.quantity.id_for_label }}">Quantity</label>
+            <input
+                type="number"
+                name="quantity"
+                id="{{ form.quantity.id_for_label }}"
+                min="1"
+                value="{{ form.quantity.value|default:'' }}"
+                {% if form.quantity.errors %}class="field-error"{% endif %}
+            >
+            {% if form.quantity.errors %}
+                <div class="error-message show">
+                    {% for error in form.quantity.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
 
-        <div>
-            <label>Amount Deposited</label>
-            {{ form.amount_deposited }}
-            {{ form.amount_deposited.errors }}
+        <div class="field{% if form.amount_deposited.errors %} field-error{% endif %}">
+            <label for="{{ form.amount_deposited.id_for_label }}">Amount Deposited</label>
+            <input
+                type="number"
+                name="amount_deposited"
+                id="{{ form.amount_deposited.id_for_label }}"
+                step="0.01"
+                min="0"
+                value="{{ form.amount_deposited.value|default:'' }}"
+                {% if form.amount_deposited.errors %}class="field-error"{% endif %}
+            >
+            {% if form.amount_deposited.errors %}
+                <div class="error-message show">
+                    {% for error in form.amount_deposited.errors %}
+                        {{ error }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
-
-        {{ form.non_field_errors }}
 
         <div class="buttons">
 

@@ -4,7 +4,10 @@
 
 <div class="form-container">
 
-    <h2>Add New Sale</h2>
+    <div class="top-bar">
+        <a href="{% url 'sales_dashboard' %}" class="btn btn-back">Back</a>
+        <h2>Add New Sale</h2>
+    </div>
 
     {% if messages %}
         {% for message in messages %}

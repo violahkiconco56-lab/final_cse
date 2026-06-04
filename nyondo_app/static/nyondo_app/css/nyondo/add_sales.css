@@ -7,8 +7,33 @@
     margin:auto;
 }
 
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.btn {
+    padding: 10px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.btn-back {
+    background: #8a79b2;
+}
+
+.btn-back:hover {
+    background: #6f6599;
+}
+
 h2{
-    margin-bottom:20px;
+    margin-bottom:0;
     color:#0b1f3a;
 }
 
